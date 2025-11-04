@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% include "admin/app_list.html" with app_list=app_list only %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<div id="content-related">
+    <div class="module" id="recent-actions-module">
+        <h2>{% translate 'Información del Sistema' %}</h2>
+        <h3>{% translate 'Sistema Multi-Tenant' %}</h3>
+        <p>Gestión centralizada de clínicas de salud mental.</p>
+        <p><strong>Usuario:</strong> {{ user.get_full_name|default:user.username }}</p>
+        <p><strong>Schema:</strong> {{ request.tenant.schema_name|default:"público" }}</p>
+    </div>
+</div>
+{% endblock %}

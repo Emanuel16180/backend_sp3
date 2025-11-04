@@ -1,0 +1,110 @@
+{% extends "admin/index.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div id="content-main">
+  {% if stats_error %}
+    <div class="messagelist">
+      <div class="error">Error cargando estadísticas: {{ stats_error }}</div>
+    </div>
+  {% endif %}
+
+  <!-- Panel de Estadísticas Globales -->
+  <div class="dashboard-stats" style="margin-bottom: 20px;">
+    <h2>📊 Gestión Centralizada de Clínicas</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+      
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007cba;">
+        <h3 style="margin: 0 0 10px 0; color: #007cba;">🏥 Clínicas Registradas</h3>
+        <p style="font-size: 24px; font-weight: bold; margin: 0; color: #333;">{{ total_clinics|default:"0" }}</p>
+        <small style="color: #666;">Bienestar + Mindcare</small>
+      </div>
+
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+        <h3 style="margin: 0 0 10px 0; color: #28a745;">🌐 Dominios Activos</h3>
+        <p style="font-size: 24px; font-weight: bold; margin: 0; color: #333;">{{ active_domains|default:"0" }}</p>
+        <small style="color: #666;">Incluyendo subdominios</small>
+      </div>
+
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+        <h3 style="margin: 0 0 10px 0; color: #e68900;">👥 Usuarios Totales</h3>
+        <p style="font-size: 24px; font-weight: bold; margin: 0; color: #333;">{{ total_users_real_clinics|default:"0" }}</p>
+        <small style="color: #666;">Solo clínicas reales (sin admin público)</small>
+      </div>
+
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+        <h3 style="margin: 0 0 10px 0; color: #17a2b8;">⚡ Estado del Sistema</h3>
+        <p style="font-size: 18px; font-weight: bold; margin: 0; color: #28a745;">Activo</p>
+        <small style="color: #666;">Multi-tenant operativo</small>
+      </div>
+
+    </div>
+
+    <!-- Desglose de usuarios -->
+    {% if total_patients or total_professionals %}
+    <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="margin: 0 0 10px 0; color: #0056b3;">📈 Desglose de Usuarios (Todas las Clínicas)</h3>
+      <div style="display: flex; gap: 30px; align-items: center;">
+        <div>
+          <strong style="color: #007cba;">🏥 Pacientes:</strong> 
+          <span style="font-size: 18px; font-weight: bold; color: #007cba;">{{ total_patients|default:"0" }}</span>
+        </div>
+        <div>
+          <strong style="color: #28a745;">👨‍⚕️ Profesionales:</strong> 
+          <span style="font-size: 18px; font-weight: bold; color: #28a745;">{{ total_professionals|default:"0" }}</span>
+        </div>
+        <div style="margin-left: auto; color: #666; font-size: 14px;">
+          <strong>Total:</strong> {{ total_patients|add:total_professionals }} usuarios operativos
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Enlaces rápidos -->
+    <div style="background: #f1f3f4; padding: 15px; border-radius: 8px;">
+      <h3 style="margin: 0 0 10px 0; color: #333;">🔗 Lista de Clínicas</h3>
+      <p style="color: #666; margin-bottom: 15px;">Desde aquí puedes ver el conteo real de usuarios por clínica y acceder a sus paneles de administración:</p>
+      <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <a href="{% url 'admin:tenants_clinic_changelist' %}" style="color: white; background: #007cba; text-decoration: none; padding: 10px 15px; border-radius: 4px; font-weight: bold;">
+          📋 Ver Clínicas con Estadísticas
+        </a>
+        <a href="{% url 'admin:tenants_domain_changelist' %}" style="color: #007cba; text-decoration: none; padding: 10px 15px; background: white; border-radius: 4px; border: 1px solid #007cba;">
+          🌐 Gestionar Dominios
+        </a>
+        <a href="/api/tenants/admin/stats/" target="_blank" style="color: #28a745; text-decoration: none; padding: 10px 15px; background: white; border-radius: 4px; border: 1px solid #28a745;">
+          📊 API JSON Estadísticas
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido original del admin -->
+  {{ block.super }}
+</div>
+
+<style>
+.dashboard-stats h2 {
+  color: #333;
+  border-bottom: 2px solid #007cba;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.dashboard-stats h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-stats > div {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-stats div[style*="display: flex"] {
+    flex-direction: column;
+    gap: 10px !important;
+  }
+}
+</style>
+{% endblock %}
