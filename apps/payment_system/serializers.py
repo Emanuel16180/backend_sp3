@@ -5,6 +5,7 @@ from django.conf import settings
 from .models import PaymentTransaction, PatientPlan
 from apps.appointments.models import Appointment
 from apps.professionals.serializers import CarePlanSerializer
+from apps.professionals.models import CarePlan
 
 class PaymentTransactionSerializer(serializers.ModelSerializer):
     """
@@ -45,23 +46,36 @@ class PaymentConfirmationSerializer(serializers.Serializer):
             if session.payment_status != 'paid':
                 raise serializers.ValidationError("El pago no ha sido completado.")
             
-            # 2. Obtenemos la cita de los metadatos
+            # 2. Obtenemos la metadata
             metadata = session.get('metadata', {})
             appointment_id = metadata.get('appointment_id')
-            if not appointment_id:
-                raise serializers.ValidationError("ID de cita no encontrado en la sesión de Stripe.")
+            plan_id = metadata.get('plan_id') # <-- AÑADIDO: Buscar el plan_id
             
-            # 3. Buscamos la cita en nuestra BD
-            appointment = Appointment.objects.get(id=appointment_id)
-            
-            # 4. ¡LA CLAVE! Guardamos todo en validated_data para que la vista lo use
+            # 3. ¡LA CLAVE! Guardamos la sesión
             data['stripe_session'] = session
-            data['appointment'] = appointment
+            
+            if appointment_id:
+                # --- Caso 1: Es un pago de Cita Única ---
+                appointment = Appointment.objects.get(id=appointment_id)
+                data['appointment'] = appointment # Guardamos la cita
+            
+            elif plan_id:
+                # --- Caso 2: Es un pago de Plan ---
+                plan = CarePlan.objects.get(id=plan_id)
+                data['plan'] = plan # Guardamos el plan
+            
+            else:
+                # --- Caso de Error ---
+                raise serializers.ValidationError(
+                    "ID de cita o plan no encontrado en la sesión de Stripe."
+                )
             
             return data
         
         except Appointment.DoesNotExist:
             raise serializers.ValidationError("La cita asociada a este pago no fue encontrada.")
+        except CarePlan.DoesNotExist: # <-- AÑADIDO: Manejar error de plan
+            raise serializers.ValidationError("El plan asociado a este pago no fue encontrado.")
         except stripe.error.StripeError as e:
             raise serializers.ValidationError(f"Error de Stripe: {str(e)}")
         except Exception as e:

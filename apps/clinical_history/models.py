@@ -320,6 +320,42 @@ class TaskCompletion(models.Model):
         ordering = ['-completed_date']
         verbose_name = 'Tarea Completada'
         verbose_name_plural = 'Tareas Completadas'
-        
-        # ¡Clave! Un paciente solo puede completar una tarea una vez por día.
         unique_together = ('task', 'patient', 'completed_date')
+
+
+class Prescription(models.Model):
+    """
+    Modelo para el Tratamiento Psiquiátrico (Medicamentos) - (CU-45)
+    Asignado por un psiquiatra a un paciente.
+    """
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='prescriptions',
+        limit_choices_to={'user_type': 'patient'}
+    )
+    psychiatrist = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, # Si el psiquiatra se va, la receta queda
+        null=True,
+        related_name='given_prescriptions',
+        limit_choices_to={'user_type': 'professional'}
+    )
+    
+    medication_name = models.CharField(max_length=255, help_text="Nombre del medicamento")
+    dosage = models.CharField(max_length=100, help_text="Dosis (ej: 10mg, 1 comprimido)")
+    frequency = models.CharField(max_length=255, help_text="Frecuencia (ej: '1 vez al día por la noche')")
+    notes = models.TextField(blank=True, help_text="Instrucciones adicionales o notas")
+    
+    is_active = models.BooleanField(default=True, help_text="Marcar como inactivo si el tratamiento finalizó")
+    
+    prescribed_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateField(null=True, blank=True, help_text="Fecha de finalización del tratamiento (opcional)")
+
+    class Meta:
+        ordering = ['-prescribed_date']
+        verbose_name = 'Receta (Tratamiento)'
+        verbose_name_plural = 'Recetas (Tratamientos)'
+
+    def __str__(self):
+        return f"{self.medication_name} ({self.dosage}) para {self.patient.get_full_name()}"

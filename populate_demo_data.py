@@ -28,8 +28,17 @@ DEMO_DATA = {
             {'name': 'Psicologia Infantil', 'description': 'Especializacion en ninos y adolescentes'},
             {'name': 'Terapia de Pareja', 'description': 'Resolucion de conflictos en relaciones'},
             {'name': 'Psicologia Deportiva', 'description': 'Apoyo psicologico para deportistas'},
+            {'name': 'Psiquiatra', 'description': 'Especialista en diagnóstico y tratamiento farmacológico'},
         ],
         'professionals': [
+            {
+                'email': 'dr.valverde@bienestar.com',
+                'first_name': 'Ernesto',
+                'last_name': 'Valverde',
+                'specialty': 'Psiquiatra',
+                'license': 'PSI-2024-004',
+                'phone': '+34 645 123 789',
+            },
             {
                 'email': 'dra.martinez@bienestar.com',
                 'first_name': 'Laura',
@@ -61,6 +70,9 @@ DEMO_DATA = {
             {'email': 'pedro.sanchez@example.com', 'first_name': 'Pedro', 'last_name': 'Sanchez', 'phone': '+34 667 333 444'},
             {'email': 'lucia.fernandez@example.com', 'first_name': 'Lucia', 'last_name': 'Fernandez', 'phone': '+34 678 444 555'},
             {'email': 'diego.rodriguez@example.com', 'first_name': 'Diego', 'last_name': 'Rodriguez', 'phone': '+34 689 555 666'},
+            {'email': 'ana.torres@example.com', 'first_name': 'Ana', 'last_name': 'Torres', 'phone': '+34 611 222 333'},
+            {'email': 'mario.ruiz@example.com', 'first_name': 'Mario', 'last_name': 'Ruiz', 'phone': '+34 622 333 444'},
+            {'email': 'sofia.vega@example.com', 'first_name': 'Sofia', 'last_name': 'Vega', 'phone': '+34 633 444 555'},
         ]
     },
     'mindcare': {

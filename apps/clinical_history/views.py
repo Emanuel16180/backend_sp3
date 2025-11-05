@@ -9,13 +9,14 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse, Http404
 from django.conf import settings
-from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion # <-- IMPORTA ClinicalHistory
-from .serializers import SessionNoteSerializer, ClinicalDocumentSerializer, PsychologistPatientSerializer, ClinicalHistorySerializer, InitialTriageSubmitSerializer, MoodJournalSerializer, ObjectiveSerializer, ObjectiveCreateSerializer, TaskCompletionSerializer# <-- IMPORTA ClinicalHistorySerializer
+from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion, Prescription # <-- IMPORTA ClinicalHistory
+from .serializers import SessionNoteSerializer, ClinicalDocumentSerializer, PsychologistPatientSerializer, ClinicalHistorySerializer, InitialTriageSubmitSerializer, MoodJournalSerializer, ObjectiveSerializer, ObjectiveCreateSerializer, TaskCompletionSerializer, PrescriptionSerializer# <-- IMPORTA ClinicalHistorySerializer
 from apps.appointments.models import Appointment
 from apps.users.models import CustomUser
 from datetime import date, timedelta
 from apps.appointments.views import IsPsychologist
 from django.db.models import Count
+from apps.professionals.models import ProfessionalProfile
 
 
 logger = logging.getLogger(__name__)
@@ -293,6 +294,29 @@ class IsPatient(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.user_type == 'patient'
 
+class IsPsychiatrist(permissions.BasePermission):
+    """
+    Permiso para CU-45:
+    Solo permite acceso a profesionales (psicólogos) que tengan
+    la especialización de 'Psiquiatra'.
+    """
+    message = "Solo los profesionales con la especialización 'Psiquiatra' pueden gestionar tratamientos."
+
+    def has_permission(self, request, view):
+        # 1. Debe ser un profesional autenticado
+        if not (request.user and request.user.is_authenticated and request.user.user_type == 'professional'):
+            return False
+        
+        try:
+            # 2. Verificar que el perfil exista y tenga la especialización
+            # Usamos __iexact para ignorar mayúsculas/minúsculas (ej: "Psiquiatra" o "psiquiatra")
+            return request.user.professional_profile.specializations.filter(name__iexact="Psiquiatra").exists()
+        except ProfessionalProfile.DoesNotExist:
+            return False # No tiene perfil, no puede ser Psiquiatra
+        except Exception as e:
+            logger.error(f"Error al verificar permiso de psiquiatra: {e}")
+            return False
+
 class InitialTriageView(generics.GenericAPIView):
     """
     Endpoint para que un paciente envíe (POST) o consulte (GET)
@@ -475,3 +499,53 @@ def get_patient_stats_view(request):
         },
         "message": "Estadísticas de progreso del paciente."
     })
+
+class PrescriptionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para CRUD de Tratamientos Psiquiátricos (Medicamentos) - (CU-45)
+    """
+    serializer_class = PrescriptionSerializer
+    permission_classes = [permissions.IsAuthenticated, IsPsychiatrist] # <-- ¡Permiso Clave!
+
+    def get_queryset(self):
+        """
+        Filtra las recetas para que solo muestre las del paciente
+        especificado en la URL (si se usa la vista 'list') o
+        todas las recetas (si se usa la vista 'detail').
+        """
+        # Si la acción es 'list', filtramos por el paciente de la URL
+        if self.action == 'list':
+            patient_id = self.kwargs.get('patient_id')
+            if not patient_id:
+                return Prescription.objects.none()
+            return Prescription.objects.filter(patient_id=patient_id)
+        
+        # Para 'retrieve', 'update', 'delete', etc., 
+        # simplemente devolvemos todas. El ID (pk) de la receta
+        # en la URL se encargará de encontrar la correcta.
+        return Prescription.objects.all()
+
+    def perform_create(self, serializer):
+        """
+        Asigna el paciente desde la URL y el psiquiatra desde el
+        usuario autenticado.
+        """
+        # Esta función solo se llama en 'create' (POST), que usa la URL
+        # .../patient/<patient_id>/prescriptions/, así que 'patient_id' SÍ existe.
+        patient = get_object_or_404(CustomUser, id=self.kwargs.get('patient_id'), user_type='patient')
+        serializer.save(
+            patient=patient,
+            psychiatrist=self.request.user
+        )
+
+class MyPrescriptionsListView(generics.ListAPIView):
+    """
+    Endpoint para que un PACIENTE vea su propio historial
+    de recetas. (CU-45 - Vista Paciente)
+    """
+    serializer_class = PrescriptionSerializer
+    permission_classes = [permissions.IsAuthenticated, IsPatient] # Solo pacientes
+
+    def get_queryset(self):
+        """Devuelve solo las recetas del paciente logueado."""
+        return Prescription.objects.filter(patient=self.request.user)

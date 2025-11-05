@@ -9,7 +9,9 @@ router.register(r'care-plans', views.CarePlanViewSet, basename='care-plan')
 
 urlpatterns = [
     
-    path('', include(router.urls)), # Para /api/professionals/care-plans/
+    #path('', include(router.urls)), # Para /api/professionals/care-plans/
+
+    path('', views.list_professionals, name='list_professionals'),
 
     path('colleagues/', views.list_colleagues, name='list-colleagues'),
     
@@ -30,4 +32,6 @@ urlpatterns = [
     # CU-34: Calificar Profesional
     path('reviews/create/', views.ReviewCreateView.as_view(), name='create-review'),
     path('<int:professional_id>/reviews/', views.professional_reviews, name='professional-reviews'),
+    
+    path('', include(router.urls)),
 ]

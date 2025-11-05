@@ -1,7 +1,7 @@
 # apps/clinical_history/serializers.py
 
 from rest_framework import serializers
-from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion  # <-- 1. IMPORTA EL NUEVO MODELO
+from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion , Prescription  # <-- 1. IMPORTA EL NUEVO MODELO
 from apps.users.models import CustomUser
 
 class SessionNoteSerializer(serializers.ModelSerializer):
@@ -343,3 +343,31 @@ class ObjectiveCreateSerializer(serializers.ModelSerializer):
             )
 
         return objective
+
+# ... (al final de apps/clinical_history/serializers.py)
+
+class PrescriptionSerializer(serializers.ModelSerializer):
+    """
+    Serializer para el modelo Prescription (CU-45)
+    """
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    psychiatrist_name = serializers.CharField(source='psychiatrist.get_full_name', read_only=True)
+    
+    class Meta:
+        model = Prescription
+        fields = [
+            'id',
+            'patient',
+            'patient_name',
+            'psychiatrist',
+            'psychiatrist_name',
+            'medication_name',
+            'dosage',
+            'frequency',
+            'notes',
+            'is_active',
+            'prescribed_date',
+            'end_date'
+        ]
+        # El psiquiatra se asigna automáticamente desde la vista
+        read_only_fields = ['psychiatrist', 'psychiatrist_name', 'patient_name', 'prescribed_date']

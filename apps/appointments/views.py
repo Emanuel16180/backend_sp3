@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from .models import Appointment, PsychologistAvailability, TimeSlot
 from apps.professionals.models import ProfessionalProfile
 from apps.professionals.models import ProfessionalProfile
+from apps.payment_system.models import PatientPlan
 from .serializers import (
     AppointmentSerializer,
     AppointmentCreateSerializer,
@@ -18,8 +19,11 @@ from .serializers import (
     AvailablePsychologistSerializer,
     ReferralCreateSerializer
 )
+from django.db import transaction
+import logging
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class IsOwnerOrPsychologist(permissions.BasePermission):
@@ -175,6 +179,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         )
     
     @action(detail=True, methods=['post'])
+    @transaction.atomic
     def complete(self, request, pk=None):
         """Marcar cita como completada (solo el psicólogo)"""
         appointment = self.get_object()
@@ -191,6 +196,30 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        try:
+            if appointment.patient_plan_id:
+                plan_comprado = PatientPlan.objects.select_for_update().get(
+                    id=appointment.patient_plan_id
+                )
+                
+                if plan_comprado.sessions_remaining > 0:
+                    plan_comprado.sessions_used += 1
+                    
+                    if plan_comprado.sessions_used >= plan_comprado.total_sessions:
+                        plan_comprado.is_active = False
+                        
+                    plan_comprado.save()
+                    logger.info(f"Plan {plan_comprado.id} actualizado: {plan_comprado.sessions_used}/{plan_comprado.total_sessions} usadas.")
+                else:
+                    logger.warning(f"Se intentó completar cita {appointment.id} con plan {plan_comprado.id} que ya no tiene sesiones.")
+
+        except PatientPlan.DoesNotExist:
+            logger.error(f"Error: La cita {appointment.id} apuntaba a un plan ({appointment.patient_plan_id}) que no existe.")
+        except Exception as e:
+            # Esta línea ahora funcionará porque 'logger' está definido
+            logger.error(f"Error actualizando el plan del paciente: {e}")
+        # --- (Fin de la lógica) ---
+
         appointment.status = 'completed'
         appointment.save()
         

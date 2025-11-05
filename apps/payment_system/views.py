@@ -227,13 +227,15 @@ def post(self, request, *args, **kwargs):
                     elif plan_id:
                         # --- 2. Es un pago de Plan (CU-44) ---
                         plan = CarePlan.objects.get(id=plan_id)
-                        PatientPlan.objects.create(
-                            patient=transaction.patient,
-                            plan=plan,
-                            transaction=transaction, # Vinculamos la transacción
-                            total_sessions=plan.number_of_sessions,
-                            sessions_used=0,
-                            is_active=True
+                        PatientPlan.objects.get_or_create(
+                            transaction=transaction, # Clave única
+                            defaults={
+                                'patient': transaction.patient,
+                                'plan': plan,
+                                'total_sessions': plan.number_of_sessions,
+                                'sessions_used': 0,
+                                'is_active': True
+                            }
                         )
                         logger.info(f"Plan {plan.id} comprado por paciente {transaction.patient.id}")
 
@@ -315,14 +317,14 @@ class ConfirmPaymentView(generics.GenericAPIView):
             logger.error(f"🚨 Error de validación en confirmación de pago: {e}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        # --- 2. ¡EL CAMBIO CLAVE! ---
-        #    Leemos desde validated_data, NO desde self.context
+        # --- 👇 2. OBTENER DATOS VALIDADOS (PUEDE SER CITA O PLAN) 👇 ---
         validated_data = serializer.validated_data
         session = validated_data.get('stripe_session')
-        appointment = validated_data.get('appointment')
+        appointment = validated_data.get('appointment') # Será None si es un plan
+        plan = validated_data.get('plan')             # Será None si es una cita
 
-        if not session or not appointment:
-            logger.error("🚨 Serializer no devolvió session o appointment después de validar")
+        if not session or (not appointment and not plan):
+            logger.error("🚨 Serializer no devolvió session Y (appointment o plan)")
             return Response(
                 {"error": "No se pudo validar la sesión de pago (datos faltantes)."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -330,40 +332,74 @@ class ConfirmPaymentView(generics.GenericAPIView):
         
         # 3. El resto de tu lógica para crear la PaymentTransaction...
         try:
+            # Obtenemos el paciente desde la metadata de Stripe
+            patient_id = session.metadata.get('patient_id')
+            patient = CustomUser.objects.get(id=patient_id)
+            
             # Creamos el registro en 'payment_transactions'
             transaction, created = PaymentTransaction.objects.update_or_create(
                 stripe_session_id=session.id,
                 defaults={
-                    'appointment': appointment,
-                    'patient': appointment.patient,
+                    'patient': patient,
                     'stripe_payment_intent_id': session.get('payment_intent'),
                     'amount': Decimal(session.get('amount_total', 0) / 100.0),
                     'currency': session.get('currency', 'usd').upper(),
                     'status': 'completed',
                     'paid_at': timezone.now()
+                    # No asignamos 'appointment' aquí directamente
                 }
             )
             logger.info(f"✅ Transacción creada: {transaction.id}. Nuevo: {created}")
 
-            # Actualizamos la cita
-            appointment.is_paid = True
-            appointment.status = 'confirmed'
-            appointment.save()
-            logger.info(f"✅ Cita actualizada: {appointment.id}")
+            # --- 👇 4. LÓGICA CONDICIONAL 👇 ---
+            if appointment:
+                # --- CASO 1: Es un pago de CITA ---
+                transaction.appointment = appointment
+                transaction.save()
 
-            # Devolvemos los datos de la cita (como espera el frontend)
-            appointment_data = {
-                "id": appointment.id,
-                "appointment_date": appointment.appointment_date,
-                "start_time": appointment.start_time.strftime('%H:%M'),
-                "psychologist_name": appointment.psychologist.get_full_name(),
-                "status": appointment.get_status_display(), # Usamos el display
-            }
-            return Response({"appointment": appointment_data}, 
-                            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+                # Actualizamos la cita
+                appointment.is_paid = True
+                appointment.status = 'confirmed'
+                appointment.save()
+                logger.info(f"✅ Cita actualizada: {appointment.id}")
+
+                # Devolvemos los datos de la cita
+                appointment_data = {
+                    "id": appointment.id,
+                    "appointment_date": appointment.appointment_date,
+                    "start_time": appointment.start_time.strftime('%H:%M'),
+                    "psychologist_name": appointment.psychologist.get_full_name(),
+                    "status": appointment.get_status_display(),
+                }
+                return Response({"appointment": appointment_data}, 
+                                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+            
+            elif plan:
+                # --- CASO 2: Es un pago de PLAN ---
+                patient_plan, plan_created = PatientPlan.objects.get_or_create(
+                    transaction=transaction, # La clave única es la transacción
+                    defaults={
+                        'patient': patient,
+                        'plan': plan,
+                        'total_sessions': plan.number_of_sessions,
+                        'sessions_used': 0,
+                        'is_active': True
+                    }
+                )
+                logger.info(f"✅ Plan {plan.id} comprado. Creado ahora: {plan_created}")
+                # Devolvemos los datos del plan comprado
+                plan_data = {
+                    "id": patient_plan.id,
+                    "plan_title": plan.title,
+                    "sessions_remaining": patient_plan.sessions_remaining,
+                    "purchased_at": patient_plan.purchased_at
+                }
+                return Response({"plan": plan_data},
+                                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
 
         except Exception as e:
-            logger.error(f"🚨 Error al crear la transacción o confirmar la cita: {e}", exc_info=True)
+            logger.error(f"🚨 Error al crear la transacción o confirmar la cita/plan: {e}", exc_info=True)
             return Response(
                 {"error": "Hubo un error al procesar la confirmación en el servidor."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

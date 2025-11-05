@@ -113,6 +113,15 @@ class Appointment(models.Model):
     )
     is_paid = models.BooleanField(default=False)
     
+    patient_plan = models.ForeignKey(
+        'payment_system.PatientPlan',
+        on_delete=models.SET_NULL, # Si se borra el plan, la cita no se borra
+        null=True,
+        blank=True,
+        related_name='appointments_used',
+        help_text="Plan del paciente utilizado para esta cita (si aplica)"
+    )
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -89,7 +89,22 @@ class ProfessionalProfileUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-# apps/professionals/serializers.py
+class CarePlanSerializer(serializers.ModelSerializer):
+    psychologist_name = serializers.CharField(source='psychologist.get_full_name', read_only=True)
+    psychologist = serializers.ReadOnlyField(source='psychologist.professional_profile.id')
+    class Meta:
+        model = CarePlan
+        fields = [
+            'id',
+            'psychologist',
+            'psychologist_name',
+            'title',
+            'description',
+            'number_of_sessions',
+            'total_price',
+            'is_active',
+        ]
+        read_only_fields = ['psychologist'] # Se asigna automáticamente
 
 class ProfessionalPublicSerializer(serializers.ModelSerializer):
     """Serializer para vista pública (sin datos sensibles)"""
@@ -97,6 +112,7 @@ class ProfessionalPublicSerializer(serializers.ModelSerializer):
     working_hours = WorkingHoursSerializer(many=True, read_only=True)
     full_name = serializers.CharField(source='user.get_full_name', read_only=True)
     user_id = serializers.ReadOnlyField(source='user.id') # <--- 1. AÑADE ESTA LÍNEA
+    care_plans = CarePlanSerializer(many=True, read_only=True, source='user.care_plans')
 
     class Meta:
         model = ProfessionalProfile
@@ -104,7 +120,7 @@ class ProfessionalPublicSerializer(serializers.ModelSerializer):
             'id', 'user_id', 'full_name', 'bio', 'education', 'experience_years', # <-- 2. AÑADE 'user_id' AQUÍ
             'consultation_fee', 'session_duration', 'accepts_online_sessions',
             'accepts_in_person_sessions', 'city', 'state', 'average_rating',
-            'total_reviews', 'specializations', 'working_hours'
+            'total_reviews', 'specializations', 'working_hours', 'care_plans'
         ]
 
 
@@ -137,20 +153,3 @@ class VerificationDocumentSerializer(serializers.ModelSerializer):
         model = VerificationDocument
         fields = ['id', 'professional', 'description', 'file_url', 'status', 'uploaded_at']
         read_only_fields = ['id', 'professional', 'file_url', 'status', 'uploaded_at']
-
-class CarePlanSerializer(serializers.ModelSerializer):
-    psychologist_name = serializers.CharField(source='psychologist.get_full_name', read_only=True)
-
-    class Meta:
-        model = CarePlan
-        fields = [
-            'id',
-            'psychologist',
-            'psychologist_name',
-            'title',
-            'description',
-            'number_of_sessions',
-            'total_price',
-            'is_active',
-        ]
-        read_only_fields = ['psychologist'] # Se asigna automáticamente

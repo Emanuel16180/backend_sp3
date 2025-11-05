@@ -19,8 +19,10 @@ class PaymentTransaction(models.Model):
     # Relaciones
     appointment = models.OneToOneField(
         Appointment,
-        on_delete=models.CASCADE,
-        related_name='payment_transaction'
+        on_delete=models.SET_NULL,
+        related_name='payment_transaction',
+        null=True,
+        blank=True
     )
     patient = models.ForeignKey(
         settings.AUTH_USER_MODEL,

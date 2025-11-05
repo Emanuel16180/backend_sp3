@@ -55,12 +55,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'appointment_date', 'start_time', 'end_time', 'appointment_type',
             'appointment_type_display', 'status', 'status_display',
             'reason_for_visit', 'notes', 'consultation_fee', 'is_paid',
-            'meeting_link', 'created_at', 'updated_at'
+            'meeting_link', 'created_at', 'updated_at', 'patient_plan'
         ]
         read_only_fields = [
             'id', 'patient_name', 'psychologist_name', 'status_display',
             'appointment_type_display', 'created_at', 'updated_at', 'end_time',
-            'consultation_fee'
+            'consultation_fee', 'patient_plan'
         ]
     
    # En apps/appointments/serializers.py, dentro de class AppointmentSerializer:
@@ -215,28 +215,22 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
             )
             end_datetime = start_datetime + timedelta(minutes=duration)
             validated_data['end_time'] = end_datetime.time()
+            # 1. Asigna el ID del plan a la cita antes de crearla
+        if patient_plan_id:
+            validated_data['patient_plan_id'] = patient_plan_id
 
-        # Creamos la Cita
+        # 2. Crea la Cita (¡YA NO DESCUENTA NADA!)
         appointment = super().create(validated_data)
 
-        # --- 👇 DESCONTAR SESIÓN DEL PLAN 👇 ---
+        # 3. (Opcional) Añadir nota, pero YA NO restar sesiones
         if patient_plan_id:
-            try:
-                plan = PatientPlan.objects.get(id=patient_plan_id)
-                plan.sessions_used += 1
-                # Opcional: desactivar el plan si se usa la última sesión
-                if plan.sessions_remaining <= 0:
-                    plan.is_active = False
-                plan.save()
-
-                # Vinculamos la cita al plan (opcional, para trazabilidad)
-                appointment.notes += f"\n[Agendada con Plan: {plan.plan.title}]"
-                appointment.save()
-
-            except PatientPlan.DoesNotExist:
-                pass # Ya fue validado, pero por seguridad
+            # Aseguramos que 'notes' no sea None
+            appointment.notes = (appointment.notes or "") + f"\n[Agendada con Plan ID: {patient_plan_id}]"
+            appointment.save(update_fields=['notes'])
+        # --- 👆 FIN DE LA MODIFICACIÓN 👆 ---
 
         return appointment
+
 
 class AvailablePsychologistSerializer(serializers.ModelSerializer):
     """Serializer para mostrar psicólogos disponibles con sus slots de tiempo"""
