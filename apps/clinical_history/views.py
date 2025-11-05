@@ -367,10 +367,11 @@ class MoodJournalView(generics.ListCreateAPIView):
         serializer.save(patient=self.request.user, date=date.today())
 
 
-class TodayMoodJournalView(generics.RetrieveAPIView):
+class TodayMoodJournalView(generics.RetrieveUpdateAPIView):
     """
     Endpoint especial para que el frontend verifique (GET)
     si el paciente ya registró su ánimo HOY.
+    También permite actualizar (PUT/PATCH) el registro de hoy.
     """
     serializer_class = MoodJournalSerializer
     permission_classes = [IsPatient]

@@ -1,0 +1,326 @@
+### ═══════════════════════════════════════════════════════════
+### 📅 FLUJO: DISPONIBILIDAD Y HORARIOS DEL PROFESIONAL
+### Archivo: 21_profesional_disponibilidad.http
+### Endpoints: /api/appointments/availability/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO PROFESIONAL
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "dra.martinez@bienestar.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER MIS HORARIOS CONFIGURADOS
+### GET /api/appointments/availability/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ CREAR DISPONIBILIDAD - LUNES
+### POST /api/appointments/availability/
+### ───────────────────────────────────────────────────────────
+# @name createMonday
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 0,
+  "start_time": "09:00",
+  "end_time": "18:00"
+}
+
+###
+@mondayId = {{createMonday.response.body.id}}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ CREAR DISPONIBILIDAD - MARTES
+### POST /api/appointments/availability/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 1,
+  "start_time": "09:00",
+  "end_time": "18:00"
+}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ CREAR DISPONIBILIDAD - MIÉRCOLES
+### POST /api/appointments/availability/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 2,
+  "start_time": "09:00",
+  "end_time": "18:00"
+}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ CREAR DISPONIBILIDAD - JUEVES (HORARIO REDUCIDO)
+### POST /api/appointments/availability/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 3,
+  "start_time": "14:00",
+  "end_time": "20:00"
+}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ CREAR DISPONIBILIDAD - VIERNES
+### POST /api/appointments/availability/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 4,
+  "start_time": "09:00",
+  "end_time": "15:00"
+}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ ACTUALIZAR HORARIO EXISTENTE
+### PATCH /api/appointments/availability/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/availability/{{mondayId}}/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "start_time": "08:00",
+  "end_time": "17:00"
+}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ DESACTIVAR UN DÍA (SIN ELIMINAR)
+### PATCH /api/appointments/availability/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/availability/{{mondayId}}/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "is_active": false
+}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ REACTIVAR UN DÍA
+### PATCH /api/appointments/availability/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/availability/{{mondayId}}/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "is_active": true
+}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 BLOQUEAR FECHAS ESPECÍFICAS (VACACIONES)
+### PATCH /api/appointments/availability/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/availability/{{mondayId}}/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "blocked_dates": [
+    "2025-12-24",
+    "2025-12-25",
+    "2025-12-31",
+    "2026-01-01"
+  ]
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣1️⃣ AÑADIR MÁS FECHAS BLOQUEADAS
+### PATCH /api/appointments/availability/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/availability/{{mondayId}}/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "blocked_dates": [
+    "2025-12-24",
+    "2025-12-25",
+    "2025-12-31",
+    "2026-01-01",
+    "2026-01-06"
+  ]
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣2️⃣ ELIMINAR DISPONIBILIDAD
+### DELETE /api/appointments/availability/{id}/
+### ───────────────────────────────────────────────────────────
+DELETE {{baseUrl}}/api/appointments/availability/{{mondayId}}/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣3️⃣ VER DISPONIBILIDADES ACTIVAS SOLAMENTE
+### GET /api/appointments/availability/?is_active=true
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/availability/?is_active=true
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣4️⃣ VER DISPONIBILIDAD DE UN DÍA ESPECÍFICO
+### GET /api/appointments/availability/?weekday=0
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/availability/?weekday=0
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Hora de inicio mayor que hora de fin
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 0,
+  "start_time": "18:00",
+  "end_time": "09:00"
+}
+
+###
+
+### ERROR: Día de semana inválido (debe ser 0-6)
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 10,
+  "start_time": "09:00",
+  "end_time": "18:00"
+}
+
+###
+
+### ERROR: Crear disponibilidad duplicada para el mismo día
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 0,
+  "start_time": "10:00",
+  "end_time": "16:00"
+}
+
+###
+
+### ERROR: Formato de hora inválido
+POST {{baseUrl}}/api/appointments/availability/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "weekday": 0,
+  "start_time": "25:00",
+  "end_time": "18:00"
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ LISTA DE DISPONIBILIDADES (200 OK):
+### [
+###   {
+###     "id": 10,
+###     "psychologist": 2,
+###     "weekday": 0,
+###     "weekday_display": "Lunes",
+###     "start_time": "09:00:00",
+###     "end_time": "18:00:00",
+###     "is_active": true,
+###     "blocked_dates": [
+###       "2025-12-24",
+###       "2025-12-25"
+###     ]
+###   }
+### ]
+###
+### ✅ DISPONIBILIDAD CREADA (201 Created):
+### {
+###   "id": 10,
+###   "psychologist": 2,
+###   "weekday": 0,
+###   "weekday_display": "Lunes",
+###   "start_time": "09:00:00",
+###   "end_time": "18:00:00",
+###   "is_active": true,
+###   "blocked_dates": []
+### }
+###
+### ✅ DISPONIBILIDAD ACTUALIZADA (200 OK):
+### {
+###   "id": 10,
+###   "psychologist": 2,
+###   "weekday": 0,
+###   "start_time": "08:00:00",
+###   "end_time": "17:00:00",
+###   "is_active": true
+### }
+###
+### ✅ ELIMINADA (204 No Content)
+### Sin contenido en la respuesta
+###
+### ❌ ERROR VALIDACIÓN (400 Bad Request):
+### {
+###   "non_field_errors": [
+###     "La hora de inicio debe ser menor que la hora de fin"
+###   ]
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 DÍAS DE LA SEMANA:
+### - 0: Lunes
+### - 1: Martes
+### - 2: Miércoles
+### - 3: Jueves
+### - 4: Viernes
+### - 5: Sábado
+### - 6: Domingo
+###
+### 💡 NOTAS IMPORTANTES:
+###
+### 1. Solo puede haber UN horario por día de la semana
+### 2. Las fechas bloqueadas afectan a ESE día específico de la semana
+### 3. Si desactivas un día (is_active=false), no aparecerá disponible
+### 4. Los slots de tiempo se generan según session_duration del perfil
+### 5. Los pacientes solo ven horarios con is_active=true
+###
+### ═══════════════════════════════════════════════════════════

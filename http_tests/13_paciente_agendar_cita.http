@@ -1,0 +1,312 @@
+### ═══════════════════════════════════════════════════════════
+### 📅 FLUJO: AGENDAR Y GESTIONAR CITAS
+### Archivo: 13_paciente_agendar_cita.http
+### Endpoints: /api/appointments/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO PACIENTE
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER HORARIO DISPONIBLE DE UN PROFESIONAL
+### GET /api/appointments/psychologist/{id}/schedule/?date=2025-11-15
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/psychologist/2/schedule/?date=2025-11-15
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ CREAR NUEVA CITA - ONLINE
+### POST /api/appointments/appointments/
+### ───────────────────────────────────────────────────────────
+# @name createAppointment
+POST {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "psychologist": 2,
+  "appointment_date": "2025-11-15",
+  "start_time": "10:00",
+  "appointment_type": "online",
+  "reason_for_visit": "Primera consulta para manejo de ansiedad"
+}
+
+###
+@appointmentId = {{createAppointment.response.body.id}}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ CREAR NUEVA CITA - PRESENCIAL
+### POST /api/appointments/appointments/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "psychologist": 3,
+  "appointment_date": "2025-11-16",
+  "start_time": "14:00",
+  "appointment_type": "in_person",
+  "reason_for_visit": "Seguimiento de terapia cognitiva",
+  "notes": "Preferencia por consulta presencial"
+}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ VER MIS CITAS (TODAS)
+### GET /api/appointments/appointments/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ VER MIS CITAS CONFIRMADAS
+### GET /api/appointments/appointments/?status=confirmed
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?status=confirmed
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ VER MIS CITAS PENDIENTES
+### GET /api/appointments/appointments/?status=pending
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?status=pending
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ VER CITAS EN UN RANGO DE FECHAS
+### GET /api/appointments/appointments/?date_from=2025-11-01&date_to=2025-11-30
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?date_from=2025-11-01&date_to=2025-11-30
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ VER DETALLE DE UNA CITA
+### GET /api/appointments/appointments/{id}/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/{{appointmentId}}/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ CANCELAR CITA
+### PATCH /api/appointments/appointments/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/appointments/{{appointmentId}}/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "cancelled",
+  "notes": "No podré asistir por motivos laborales"
+}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 USAR ACCIÓN PERSONALIZADA PARA CANCELAR
+### POST /api/appointments/appointments/{id}/cancel/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/appointments/{{appointmentId}}/cancel/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "reason": "Cambio de horario laboral"
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣1️⃣ CONFIRMAR ASISTENCIA A CITA (SOLO PSICÓLOGO)
+### POST /api/appointments/appointments/{id}/confirm/
+### ⚠️ NOTA: Este endpoint es solo para psicólogos
+### Los pacientes NO pueden confirmar citas - deben pagarlas
+### ───────────────────────────────────────────────────────────
+# POST {{baseUrl}}/api/appointments/appointments/{{appointmentId}}/confirm/
+# Authorization: Token {{authToken}}
+# ❌ DESHABILITADO - Este endpoint requiere credenciales de psicólogo
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣2️⃣ VER PRÓXIMA CITA
+### GET /api/appointments/appointments/?status=confirmed&ordering=appointment_date
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?status=confirmed&ordering=appointment_date
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣3️⃣ VER HISTORIAL DE CITAS COMPLETADAS
+### GET /api/appointments/appointments/?status=completed
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?status=completed
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Intentar agendar en horario no disponible
+POST {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "psychologist": 2,
+  "appointment_date": "2025-11-15",
+  "start_time": "20:00",
+  "appointment_type": "online",
+  "reason_for_visit": "Consulta"
+}
+
+###
+
+### ERROR: Intentar agendar en fecha pasada
+POST {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "psychologist": 2,
+  "appointment_date": "2025-10-01",
+  "start_time": "10:00",
+  "appointment_type": "online",
+  "reason_for_visit": "Consulta"
+}
+
+###
+
+### ERROR: Horario ya ocupado
+POST {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "psychologist": 2,
+  "appointment_date": "2025-11-05",
+  "start_time": "10:00",
+  "appointment_type": "online",
+  "reason_for_visit": "Consulta"
+}
+
+###
+
+### ERROR: Profesional no existe
+POST {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "psychologist": 999,
+  "appointment_date": "2025-11-15",
+  "start_time": "10:00",
+  "appointment_type": "online",
+  "reason_for_visit": "Consulta"
+}
+
+###
+
+### ERROR: Datos incompletos
+POST {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "psychologist": 2,
+  "appointment_date": "2025-11-15"
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ HORARIO DISPONIBLE (200 OK):
+### {
+###   "date": "2025-11-15",
+###   "professional": {
+###     "id": 2,
+###     "name": "Laura Martinez",
+###     "consultation_fee": "200.00"
+###   },
+###   "available_slots": [
+###     {
+###       "start_time": "09:00",
+###       "end_time": "10:00",
+###       "is_available": true
+###     },
+###     {
+###       "start_time": "10:00",
+###       "end_time": "11:00",
+###       "is_available": true
+###     }
+###   ]
+### }
+###
+### ✅ CITA CREADA (201 Created):
+### {
+###   "id": 25,
+###   "patient": {
+###     "id": 5,
+###     "first_name": "Juan",
+###     "last_name": "Perez",
+###     "email": "juan.perez@example.com"
+###   },
+###   "psychologist": {
+###     "id": 2,
+###     "first_name": "Laura",
+###     "last_name": "Martinez"
+###   },
+###   "appointment_date": "2025-11-15",
+###   "start_time": "10:00:00",
+###   "end_time": "11:00:00",
+###   "appointment_type": "online",
+###   "status": "pending",
+###   "reason_for_visit": "Primera consulta para manejo de ansiedad",
+###   "consultation_fee": "200.00",
+###   "is_paid": false,
+###   "meeting_link": null,
+###   "created_at": "2025-11-05T10:30:00Z"
+### }
+###
+### ✅ LISTA DE CITAS (200 OK):
+### {
+###   "count": 3,
+###   "next": null,
+###   "previous": null,
+###   "results": [...]
+### }
+###
+### ❌ ERROR HORARIO NO DISPONIBLE (400 Bad Request):
+### {
+###   "non_field_errors": [
+###     "El psicólogo no está disponible en este horario"
+###   ]
+### }
+###
+### ❌ ERROR FECHA PASADA (400 Bad Request):
+### {
+###   "non_field_errors": [
+###     "No se pueden agendar citas en fechas pasadas"
+###   ]
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 NOTAS IMPORTANTES:
+###
+### 1. El campo "end_time" se calcula automáticamente según session_duration
+### 2. Las citas nuevas tienen status="pending" hasta que se paguen
+### 3. Después del pago, el status cambia a "confirmed"
+### 4. Solo puedes cancelar citas con status "pending" o "confirmed"
+### 5. El meeting_link se genera automáticamente para citas online
+###
+### ═══════════════════════════════════════════════════════════

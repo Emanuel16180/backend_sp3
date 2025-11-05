@@ -1,0 +1,343 @@
+### ═══════════════════════════════════════════════════════════
+### 📊 FLUJO: REPORTES Y ESTADÍSTICAS (ADMINISTRADOR)
+### Archivo: 32_admin_reportes.http
+### Endpoints: /api/clinic-admin/reports/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO ADMINISTRADOR
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "admin@bienestar.com",
+  "password": "admin123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ DASHBOARD GENERAL
+### GET /api/clinic-admin/dashboard/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/dashboard/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ ESTADÍSTICAS DE CITAS
+### GET /api/clinic-admin/reports/appointments/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/appointments/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ ESTADÍSTICAS DE CITAS POR PERÍODO
+### GET /api/clinic-admin/reports/appointments/?start_date=2025-11-01&end_date=2025-11-30
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/appointments/?start_date=2025-11-01&end_date=2025-11-30
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ REPORTE FINANCIERO
+### GET /api/clinic-admin/reports/financial/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/financial/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ REPORTE FINANCIERO POR MES
+### GET /api/clinic-admin/reports/financial/?month=2025-11
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/financial/?month=2025-11
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ INGRESOS POR PROFESIONAL
+### GET /api/clinic-admin/reports/earnings-by-professional/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/earnings-by-professional/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ INGRESOS POR PROFESIONAL (MES ESPECÍFICO)
+### GET /api/clinic-admin/reports/earnings-by-professional/?month=2025-11
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/earnings-by-professional/?month=2025-11
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ ESTADÍSTICAS DE USUARIOS
+### GET /api/clinic-admin/reports/users/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/users/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ CRECIMIENTO DE USUARIOS POR MES
+### GET /api/clinic-admin/reports/user-growth/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/user-growth/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 TOP 10 PROFESIONALES MÁS ACTIVOS
+### GET /api/clinic-admin/reports/top-professionals/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/top-professionals/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣1️⃣ ESPECIALIDADES MÁS DEMANDADAS
+### GET /api/clinic-admin/reports/specializations/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/specializations/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣2️⃣ TASA DE RETENCIÓN DE PACIENTES
+### GET /api/clinic-admin/reports/patient-retention/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/patient-retention/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣3️⃣ TASA DE CANCELACIÓN
+### GET /api/clinic-admin/reports/cancellation-rate/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/cancellation-rate/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣4️⃣ REPORTE DE NO-SHOWS
+### GET /api/clinic-admin/reports/no-shows/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/no-shows/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣5️⃣ OCUPACIÓN DE PROFESIONALES
+### GET /api/clinic-admin/reports/professional-utilization/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/professional-utilization/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣6️⃣ EXPORTAR REPORTE A CSV/EXCEL
+### GET /api/clinic-admin/reports/export/?report_type=appointments&format=csv
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/reports/export/?report_type=appointments&format=csv
+Authorization: Token {{authToken}}
+
+###
+
+### EXPORTAR REPORTE FINANCIERO
+GET {{baseUrl}}/api/clinic-admin/reports/export/?report_type=financial&format=xlsx&month=2025-11
+Authorization: Token {{authToken}}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ DASHBOARD GENERAL (200 OK):
+### {
+###   "overview": {
+###     "total_users": 125,
+###     "total_patients": 100,
+###     "total_professionals": 20,
+###     "total_admins": 5
+###   },
+###   "appointments": {
+###     "total": 450,
+###     "pending": 25,
+###     "confirmed": 40,
+###     "completed": 350,
+###     "cancelled": 30,
+###     "no_show": 5,
+###     "this_month": 45,
+###     "this_week": 12,
+###     "today": 3
+###   },
+###   "financial": {
+###     "total_revenue": "112500.00",
+###     "clinic_commission": "28125.00",
+###     "professional_earnings": "84375.00",
+###     "this_month": "12500.00",
+###     "last_month": "11200.00",
+###     "growth_percentage": 11.6
+###   },
+###   "recent_activity": [
+###     {
+###       "type": "new_patient",
+###       "user": "María González",
+###       "timestamp": "2025-11-05T09:30:00Z"
+###     },
+###     {
+###       "type": "appointment_completed",
+###       "patient": "Juan Perez",
+###       "professional": "Laura Martinez",
+###       "timestamp": "2025-11-05T09:00:00Z"
+###     }
+###   ]
+### }
+###
+### ✅ REPORTE DE CITAS (200 OK):
+### {
+###   "period": {
+###     "start_date": "2025-11-01",
+###     "end_date": "2025-11-30"
+###   },
+###   "total_appointments": 45,
+###   "by_status": {
+###     "pending": 5,
+###     "confirmed": 8,
+###     "completed": 28,
+###     "cancelled": 3,
+###     "no_show": 1
+###   },
+###   "by_type": {
+###     "online": 30,
+###     "in_person": 15
+###   },
+###   "completion_rate": 82.4,
+###   "cancellation_rate": 8.9,
+###   "no_show_rate": 2.2,
+###   "average_per_day": 1.5,
+###   "busiest_day": {
+###     "date": "2025-11-15",
+###     "appointments": 6
+###   }
+### }
+###
+### ✅ REPORTE FINANCIERO (200 OK):
+### {
+###   "period": "2025-11",
+###   "total_revenue": "12500.00",
+###   "clinic_commission": "3125.00",
+###   "professional_earnings": "9375.00",
+###   "commission_rate": 25.0,
+###   "paid_appointments": 50,
+###   "average_per_appointment": "250.00",
+###   "payment_methods": {
+###     "stripe": "12000.00",
+###     "cash": "500.00"
+###   },
+###   "daily_breakdown": [
+###     {
+###       "date": "2025-11-01",
+###       "revenue": "750.00",
+###       "appointments": 3
+###     }
+###   ]
+### }
+###
+### ✅ INGRESOS POR PROFESIONAL (200 OK):
+### [
+###   {
+###     "professional": {
+###       "id": 3,
+###       "name": "Laura Martinez",
+###       "specializations": ["Ansiedad", "Depresión"]
+###     },
+###     "total_revenue": "3750.00",
+###     "clinic_commission": "937.50",
+###     "net_earnings": "2812.50",
+###     "total_appointments": 15,
+###     "completed_appointments": 14,
+###     "average_per_appointment": "250.00"
+###   },
+###   {
+###     "professional": {
+###       "id": 4,
+###       "name": "Carlos Rodriguez",
+###       "specializations": ["Terapia Familiar"]
+###     },
+###     "total_revenue": "2400.00",
+###     "clinic_commission": "600.00",
+###     "net_earnings": "1800.00",
+###     "total_appointments": 12,
+###     "completed_appointments": 10,
+###     "average_per_appointment": "200.00"
+###   }
+### ]
+###
+### ✅ TOP PROFESIONALES (200 OK):
+### [
+###   {
+###     "rank": 1,
+###     "professional": {
+###       "id": 3,
+###       "name": "Laura Martinez"
+###     },
+###     "total_appointments": 47,
+###     "total_patients": 25,
+###     "average_rating": 4.8,
+###     "total_revenue": "11750.00"
+###   }
+### ]
+###
+### ✅ ESPECIALIDADES MÁS DEMANDADAS (200 OK):
+### [
+###   {
+###     "specialization": "Ansiedad",
+###     "total_appointments": 120,
+###     "total_professionals": 8,
+###     "average_rating": 4.7
+###   },
+###   {
+###     "specialization": "Depresión",
+###     "total_appointments": 95,
+###     "total_professionals": 6,
+###     "average_rating": 4.6
+###   }
+### ]
+###
+### ✅ RETENCIÓN DE PACIENTES (200 OK):
+### {
+###   "total_patients": 100,
+###   "returning_patients": 75,
+###   "retention_rate": 75.0,
+###   "average_appointments_per_patient": 4.5,
+###   "patients_with_multiple_appointments": 80
+### }
+###
+### ✅ OCUPACIÓN DE PROFESIONALES (200 OK):
+### [
+###   {
+###     "professional": {
+###       "id": 3,
+###       "name": "Laura Martinez"
+###     },
+###     "total_slots": 160,
+###     "booked_slots": 128,
+###     "available_slots": 32,
+###     "utilization_rate": 80.0
+###   }
+### ]
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 FILTROS DISPONIBLES:
+###
+### - start_date / end_date: Filtrar por rango de fechas
+### - month: Filtrar por mes (formato: YYYY-MM)
+### - professional_id: Filtrar por profesional específico
+### - specialization_id: Filtrar por especialización
+### - format: Formato de exportación (csv, xlsx, json)
+### - report_type: Tipo de reporte para exportar
+###
+### 💡 TIPOS DE REPORTE PARA EXPORTAR:
+###
+### - appointments: Reporte de citas
+### - financial: Reporte financiero
+### - users: Reporte de usuarios
+### - professionals: Reporte de profesionales
+### - earnings: Reporte de ingresos por profesional
+###
+### ═══════════════════════════════════════════════════════════
