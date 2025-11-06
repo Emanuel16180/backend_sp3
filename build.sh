@@ -31,14 +31,14 @@ if created:
 else:
     print('⚠️ Clínica Bienestar ya existe')
 
-# Asegurar que el dominio existe y está correcto
-Domain.objects.update_or_create(
+# Limpiar dominios duplicados y crear el correcto
+Domain.objects.filter(tenant=bienestar).delete()
+Domain.objects.create(
+    domain='bienestar.psicoadmin.xyz',
     tenant=bienestar,
-    defaults={
-        'domain': 'bienestar.psicoadmin.xyz',
-        'is_primary': True
-    }
+    is_primary=True
 )
+print('✅ Dominio de Bienestar configurado')
 
 # Crear Mindcare si no existe
 mindcare, created = Clinic.objects.get_or_create(
@@ -50,14 +50,14 @@ if created:
 else:
     print('⚠️ Clínica Mindcare ya existe')
 
-# Asegurar que el dominio existe y está correcto
-Domain.objects.update_or_create(
+# Limpiar dominios duplicados y crear el correcto
+Domain.objects.filter(tenant=mindcare).delete()
+Domain.objects.create(
+    domain='mindcare.psicoadmin.xyz',
     tenant=mindcare,
-    defaults={
-        'domain': 'mindcare.psicoadmin.xyz',
-        'is_primary': True
-    }
+    is_primary=True
 )
+print('✅ Dominio de Mindcare configurado')
 
 print('🎉 Clínicas y dominios configurados correctamente')
 "
