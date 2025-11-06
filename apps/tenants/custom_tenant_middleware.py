@@ -18,35 +18,59 @@ class CustomTenantMiddleware:
         
         logger.info(f"🔍 [CustomTenantMiddleware] Hostname: {hostname}")
         
-        Domain = get_tenant_domain_model()
+        # 🔥 PRIORIDAD 1: Detectar por header X-Tenant-Schema (para frontend con subdominio Vercel)
+        tenant_header = request.headers.get('X-Tenant-Schema')
         
-        try:
-            domain = Domain.objects.select_related('tenant').get(domain=hostname)
-            tenant = domain.tenant
-            
-            logger.info(f"✅ Tenant: {tenant.schema_name} (ID: {tenant.id})")
-            
-            # ESTABLECER el tenant en el request
-            request.tenant = tenant
-            
-            # CONFIGURAR la conexión PostgreSQL al schema correcto
-            connection.set_tenant(tenant)
-            
-            logger.info(f"🗄️ PostgreSQL schema activado: {connection.schema_name}")
-            
-        except Domain.DoesNotExist:
-            logger.warning(f"⚠️ Dominio '{hostname}' no encontrado")
-            logger.warning(f"📋 Dominios registrados: {list(Domain.objects.values_list('domain', flat=True))}")
-            
-            # Si no se encuentra, usar el tenant público
+        if tenant_header:
+            logger.info(f"🎯 Header X-Tenant-Schema detectado: {tenant_header}")
             try:
-                tenant = get_tenant_model().objects.get(schema_name='public')
+                tenant = get_tenant_model().objects.get(schema_name=tenant_header)
+                logger.info(f"✅ Tenant desde header: {tenant.schema_name} (ID: {tenant.id})")
+                
+                # ESTABLECER el tenant en el request
                 request.tenant = tenant
+                
+                # CONFIGURAR la conexión PostgreSQL al schema correcto
                 connection.set_tenant(tenant)
-                logger.info(f"🏢 Usando tenant público por defecto")
-            except Exception as e:
-                logger.error(f"❌ Error crítico: {e}")
-                raise
+                
+                logger.info(f"🗄️ PostgreSQL schema activado: {connection.schema_name}")
+                
+            except get_tenant_model().DoesNotExist:
+                logger.error(f"❌ Schema '{tenant_header}' no existe en la base de datos")
+                # Continuar con detección por dominio
+                tenant_header = None
+        
+        # 🔥 PRIORIDAD 2: Detectar por dominio (para acceso directo al backend)
+        if not tenant_header:
+            Domain = get_tenant_domain_model()
+            
+            try:
+                domain = Domain.objects.select_related('tenant').get(domain=hostname)
+                tenant = domain.tenant
+                
+                logger.info(f"✅ Tenant desde dominio: {tenant.schema_name} (ID: {tenant.id})")
+                
+                # ESTABLECER el tenant en el request
+                request.tenant = tenant
+                
+                # CONFIGURAR la conexión PostgreSQL al schema correcto
+                connection.set_tenant(tenant)
+                
+                logger.info(f"🗄️ PostgreSQL schema activado: {connection.schema_name}")
+                
+            except Domain.DoesNotExist:
+                logger.warning(f"⚠️ Dominio '{hostname}' no encontrado")
+                logger.warning(f"📋 Dominios registrados: {list(Domain.objects.values_list('domain', flat=True))}")
+                
+                # Si no se encuentra, usar el tenant público
+                try:
+                    tenant = get_tenant_model().objects.get(schema_name='public')
+                    request.tenant = tenant
+                    connection.set_tenant(tenant)
+                    logger.info(f"🏢 Usando tenant público por defecto")
+                except Exception as e:
+                    logger.error(f"❌ Error crítico: {e}")
+                    raise
         
         # FORZAR el URLConf correcto según el tipo de tenant
         if request.tenant.schema_name == 'public':
