@@ -87,8 +87,7 @@ class PaymentReportSerializer(serializers.ModelSerializer):
     Calcula las ganancias de la clínica y del profesional.
     """
     patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
-    psychologist_name = serializers.CharField(source='appointment.psychologist.get_full_name', read_only=True)
-    
+    psychologist_name = serializers.SerializerMethodField()
     # Nuevos campos calculados
     clinic_earning = serializers.SerializerMethodField()
     psychologist_earning = serializers.SerializerMethodField()
@@ -109,6 +108,24 @@ class PaymentReportSerializer(serializers.ModelSerializer):
             'currency',
         ]
     
+    def get_psychologist_name(self, obj):
+        """
+        Obtiene el nombre del psicólogo, ya sea desde la cita
+        o desde el plan comprado.
+        """
+        try:
+            if obj.appointment:
+                # Caso 1: Es un pago de Cita
+                return obj.appointment.psychologist.get_full_name()
+            elif hasattr(obj, 'patient_plan') and obj.patient_plan:
+                # Caso 2: Es un pago de Plan (obj.patient_plan es la relación)
+                return obj.patient_plan.plan.psychologist.get_full_name()
+        except AttributeError:
+            # En caso de que algo se haya borrado (ej. el psicólogo)
+            return "Psicólogo no disponible"
+        
+        return "N/A (Pago no asociado)"
+
     def get_clinic_percentage(self, obj):
         # Obtenemos el porcentaje desde el "contexto" que le pasará la vista
         return self.context.get('clinic_percentage', 0)

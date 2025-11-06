@@ -99,6 +99,23 @@ class Clinic(TenantMixin):
 
     created_on = models.DateField(auto_now_add=True)
 
+    SCHEDULE_CHOICES = (
+        ('disabled', 'Desactivado'),
+        ('daily', 'Diario'),
+        ('weekly', 'Semanal'),
+    )
+    backup_schedule = models.CharField(
+        max_length=10,
+        choices=SCHEDULE_CHOICES,
+        default='disabled',
+        help_text="Frecuencia de los backups automáticos."
+    )
+    last_backup_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Fecha y hora del último backup automático."
+    )
+
     # auto_create_schema se asegura de que django-tenants cree automáticamente
     # un nuevo esquema en la base de datos cuando se crea una nueva clínica.
     auto_create_schema = True

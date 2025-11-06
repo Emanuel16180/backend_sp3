@@ -1,22 +1,25 @@
 # apps/backups/urls.py
 
 from django.urls import path
-from .views import CreateBackupAndDownloadView, RestoreBackupFromFileView
-from .cloud_views import (
-    list_cloud_backups,
-    download_cloud_backup,
-    delete_cloud_backup,
-    get_backup_download_url
+from .views import (
+    CreateBackupView, 
+    RestoreBackupFromFileView,
+    BackupHistoryListView,
+    DownloadBackupView
 )
 
 urlpatterns = [
-    # Rutas originales (local + S3)
-    path('create/', CreateBackupAndDownloadView.as_view(), name='create-backup'),
+    # Ruta original para crear (manual) y descargar
+    path('create/', CreateBackupView.as_view(), name='create-backup'),
+    
+    # Ruta original para restaurar
     path('restore/', RestoreBackupFromFileView.as_view(), name='restore-backup'),
     
-    # Nuevas rutas para gestión de backups en S3
-    path('cloud/list/', list_cloud_backups, name='list-cloud-backups'),
-    path('cloud/download/', download_cloud_backup, name='download-cloud-backup'),
-    path('cloud/delete/', delete_cloud_backup, name='delete-cloud-backup'),
-    path('cloud/get-url/', get_backup_download_url, name='get-backup-url'),
+    # --- 👇 NUEVAS RUTAS PARA EL REGISTRO 👇 ---
+    
+    # (GET) Listar todos los backups registrados en la BD
+    path('history/', BackupHistoryListView.as_view(), name='list-backup-history'),
+    
+    # (GET) Descargar un backup específico por su ID
+    path('history/<int:pk>/download/', DownloadBackupView.as_view(), name='download-backup-history'),
 ]
