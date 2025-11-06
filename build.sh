@@ -35,7 +35,7 @@ Domain.objects.get_or_create(
 )
 print('✅ Dominio api.psicoadmin.xyz agregado al tenant público')
 
-# Crear Bienestar si no existe
+# Crear Bienestar si no existe (SIN DOMINIO)
 bienestar, created = Clinic.objects.get_or_create(
     schema_name='bienestar',
     defaults={'name': 'Clínica Bienestar'}
@@ -45,16 +45,10 @@ if created:
 else:
     print('⚠️ Clínica Bienestar ya existe')
 
-# Limpiar dominios duplicados y crear el correcto
-Domain.objects.filter(tenant=bienestar).delete()
-Domain.objects.create(
-    domain='bienestar.psicoadmin.xyz',
-    tenant=bienestar,
-    is_primary=True
-)
-print('✅ Dominio de Bienestar configurado')
+# NO configuramos dominio para bienestar (se usa con X-Tenant-Schema)
+print('ℹ️ Bienestar se accede solo con header X-Tenant-Schema desde el frontend')
 
-# Crear Mindcare si no existe
+# Crear Mindcare si no existe (SIN DOMINIO)
 mindcare, created = Clinic.objects.get_or_create(
     schema_name='mindcare',
     defaults={'name': 'Clínica Mindcare'}
@@ -64,16 +58,10 @@ if created:
 else:
     print('⚠️ Clínica Mindcare ya existe')
 
-# Limpiar dominios duplicados y crear el correcto
-Domain.objects.filter(tenant=mindcare).delete()
-Domain.objects.create(
-    domain='mindcare.psicoadmin.xyz',
-    tenant=mindcare,
-    is_primary=True
-)
-print('✅ Dominio de Mindcare configurado')
+# NO configuramos dominio para mindcare (se usa con X-Tenant-Schema)
+print('ℹ️ Mindcare se accede solo con header X-Tenant-Schema desde el frontend')
 
-print('🎉 Clínicas y dominios configurados correctamente')
+print('🎉 Clínicas configuradas correctamente')
 "
 
 echo "📊 Aplicando migraciones a los tenants..."
