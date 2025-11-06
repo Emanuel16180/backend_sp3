@@ -5,6 +5,11 @@ venv/
 __pycache__/
 db.sqlite3
 
+# Archivos con credenciales sensibles
+AWS_ENV_VARIABLES.txt
+.ebextensions/
+.ebignore
+
 # Archivos de migraciones compilados
 */migrations/__pycache__/
 *.log
@@ -58,3 +63,7 @@ htmlcov/
 *.egg-info/
 dist/
 build/
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
