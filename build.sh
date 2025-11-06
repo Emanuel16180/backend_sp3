@@ -20,6 +20,20 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from apps.tenants.models import Clinic, Domain
+from django_tenants.utils import get_public_schema_name
+
+# Obtener el tenant público
+public_tenant = Clinic.objects.get(schema_name=get_public_schema_name())
+
+# Agregar dominio para api.psicoadmin.xyz al tenant público
+Domain.objects.get_or_create(
+    domain='api.psicoadmin.xyz',
+    defaults={
+        'tenant': public_tenant,
+        'is_primary': False
+    }
+)
+print('✅ Dominio api.psicoadmin.xyz agregado al tenant público')
 
 # Crear Bienestar si no existe
 bienestar, created = Clinic.objects.get_or_create(
