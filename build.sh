@@ -166,4 +166,4 @@ with schema_context('mindcare'):
 print('🎉 Usuarios de demostración creados')
 "
 
-echo "✅ Build completado!"
+echo "✅ Build completado! (v2 - Con usuarios demo)"
