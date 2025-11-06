@@ -321,6 +321,7 @@ CORS_ALLOW_HEADERS = [
     # Headers adicionales para APIs
     'x-api-key',
     'x-client-type',
+    'x-tenant-schema',  # 🔥 CRÍTICO: Header para multi-tenant
 ]
 
 # Métodos HTTP permitidos
