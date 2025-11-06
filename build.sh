@@ -93,70 +93,86 @@ from apps.users.models import CustomUser
 with schema_context('bienestar'):
     # Admin
     if not CustomUser.objects.filter(email='admin@bienestar.com').exists():
-        CustomUser.objects.create_superuser(
+        admin = CustomUser(
             email='admin@bienestar.com',
-            password='admin123',
+            username='admin_bienestar',
             first_name='Admin',
             last_name='Bienestar',
-            user_type='admin'
+            user_type='admin',
+            is_staff=True,
+            is_superuser=True
         )
+        admin.set_password('admin123')
+        admin.save()
         print('✅ Admin de Bienestar creado')
     
     # Profesional
     if not CustomUser.objects.filter(email='dra.martinez@bienestar.com').exists():
-        CustomUser.objects.create_user(
+        prof = CustomUser(
             email='dra.martinez@bienestar.com',
-            password='demo123',
+            username='dra_martinez_bienestar',
             first_name='Laura',
             last_name='Martínez',
             user_type='professional'
         )
+        prof.set_password('demo123')
+        prof.save()
         print('✅ Profesional de Bienestar creado')
     
     # Paciente
     if not CustomUser.objects.filter(email='juan.perez@example.com').exists():
-        CustomUser.objects.create_user(
+        patient = CustomUser(
             email='juan.perez@example.com',
-            password='demo123',
+            username='juan_perez_bienestar',
             first_name='Juan',
             last_name='Pérez',
             user_type='patient'
         )
+        patient.set_password('demo123')
+        patient.save()
         print('✅ Paciente de Bienestar creado')
 
 # Crear usuarios en Mindcare
 with schema_context('mindcare'):
     # Admin
     if not CustomUser.objects.filter(email='admin@mindcare.com').exists():
-        CustomUser.objects.create_superuser(
+        admin = CustomUser(
             email='admin@mindcare.com',
-            password='admin123',
+            username='admin_mindcare',
             first_name='Admin',
             last_name='Mindcare',
-            user_type='admin'
+            user_type='admin',
+            is_staff=True,
+            is_superuser=True
         )
+        admin.set_password('admin123')
+        admin.save()
         print('✅ Admin de Mindcare creado')
     
     # Profesional
     if not CustomUser.objects.filter(email='dr.garcia@mindcare.com').exists():
-        CustomUser.objects.create_user(
+        prof = CustomUser(
             email='dr.garcia@mindcare.com',
-            password='demo123',
+            username='dr_garcia_mindcare',
             first_name='Carlos',
             last_name='García',
             user_type='professional'
         )
+        prof.set_password('demo123')
+        prof.save()
         print('✅ Profesional de Mindcare creado')
     
     # Paciente
     if not CustomUser.objects.filter(email='maria.lopez@example.com').exists():
-        CustomUser.objects.create_user(
+        patient = CustomUser(
             email='maria.lopez@example.com',
-            password='demo123',
+            username='maria_lopez_mindcare',
             first_name='María',
             last_name='López',
             user_type='patient'
         )
+        patient.set_password('demo123')
+        patient.save()
         print('✅ Paciente de Mindcare creado')
 
 print('🎉 Usuarios de demostración creados')
