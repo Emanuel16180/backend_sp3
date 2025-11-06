@@ -1,0 +1,218 @@
+### ═══════════════════════════════════════════════════════════
+### 🏥 FLUJO: TRIAJE INICIAL DEL PACIENTE
+### Archivo: 11_paciente_triaje.http
+### Endpoints: /api/clinical-history/triage/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO NUEVO PACIENTE (SIN TRIAJE)
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "maria.gomez@example.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ CREAR TRIAJE INICIAL - CASO ANSIEDAD
+### POST /api/clinical-history/triage/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/triage/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "answers": {
+    "motivo_consulta": "Me siento ansioso/a la mayor parte del tiempo",
+    "duracion": "Más de 2 semanas",
+    "intensidad": "Moderada a severa",
+    "sintomas": [
+      "Preocupación excesiva",
+      "Dificultad para dormir",
+      "Tensión muscular",
+      "Irritabilidad"
+    ],
+    "impacto_vida": "Afecta mi trabajo y relaciones",
+    "intentos_previos": "He intentado técnicas de relajación por mi cuenta",
+    "apoyo_social": "Tengo apoyo de mi familia"
+  },
+  "pre_diagnosis": "Posible Trastorno de Ansiedad Generalizada",
+  "recommendation": "Se recomienda terapia cognitivo-conductual con seguimiento semanal inicial"
+}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ CREAR TRIAJE INICIAL - CASO DEPRESIÓN
+### POST /api/clinical-history/triage/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/triage/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "answers": {
+    "motivo_consulta": "Me siento triste y sin energía",
+    "duracion": "Más de 1 mes",
+    "intensidad": "Severa",
+    "sintomas": [
+      "Tristeza persistente",
+      "Pérdida de interés en actividades",
+      "Cambios en el apetito",
+      "Problemas de concentración",
+      "Pensamientos negativos"
+    ],
+    "impacto_vida": "No puedo realizar mis actividades diarias normalmente",
+    "intentos_previos": "No he buscado ayuda antes",
+    "apoyo_social": "Me siento solo/a"
+  },
+  "pre_diagnosis": "Posible Episodio Depresivo",
+  "recommendation": "Se recomienda evaluación urgente con psicólogo clínico y considerar intervención farmacológica"
+}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ CREAR TRIAJE INICIAL - CASO ESTRÉS LABORAL
+### POST /api/clinical-history/triage/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/triage/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "answers": {
+    "motivo_consulta": "Estrés relacionado con el trabajo",
+    "duracion": "Últimas semanas",
+    "intensidad": "Moderada",
+    "sintomas": [
+      "Dificultad para desconectar del trabajo",
+      "Dolor de cabeza frecuente",
+      "Problemas para dormir",
+      "Irritabilidad"
+    ],
+    "impacto_vida": "Afecta mi rendimiento laboral y vida personal",
+    "intentos_previos": "He intentado tomar vacaciones cortas",
+    "apoyo_social": "Tengo apoyo de amigos y pareja"
+  },
+  "pre_diagnosis": "Estrés Laboral / Burnout Inicial",
+  "recommendation": "Terapia breve enfocada en manejo del estrés y técnicas de afrontamiento"
+}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ VER MI TRIAJE INICIAL
+### GET /api/clinical-history/triage/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/triage/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ VERIFICAR SI HE COMPLETADO EL TRIAJE (en el login)
+### POST /api/auth/login/
+### El campo "has_completed_triage" indica si ya hizo el triaje
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "maria.gomez@example.com",
+  "password": "demo123"
+}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Intentar crear triaje duplicado (ya existe uno)
+POST {{baseUrl}}/api/clinical-history/triage/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "answers": {
+    "motivo_consulta": "Otro motivo"
+  },
+  "pre_diagnosis": "Test",
+  "recommendation": "Test"
+}
+
+###
+
+### ERROR: Acceso sin autenticación
+GET {{baseUrl}}/api/clinical-history/triage/
+
+###
+
+### ERROR: Datos incompletos
+POST {{baseUrl}}/api/clinical-history/triage/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "answers": {
+    "motivo_consulta": "Ansiedad"
+  }
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ TRIAJE CREADO EXITOSAMENTE (200 OK):
+### OPCIÓN 1 - Con respuestas completas:
+### {
+###   "patient": 6,
+###   "answers": {
+###     "motivo_consulta": "Me siento ansioso/a...",
+###     "duracion": "Más de 2 semanas",
+###     "sintomas": ["Preocupación excesiva", ...]
+###   },
+###   "pre_diagnosis": "Posible Trastorno de Ansiedad Generalizada",
+###   "recommendation": "Se recomienda terapia cognitivo-conductual...",
+###   "created_at": "2025-11-05T10:30:00Z"
+### }
+###
+### OPCIÓN 2 - Respuesta simplificada (sin síntomas detectados):
+### {
+###   "patient": 6,
+###   "pre_diagnosis": "Sin Signos Relevantes Detectados",
+###   "recommendation": "No se detectan signos de alarma inmediatos...",
+###   "created_at": "2025-11-05T15:27:27.885825-04:00"
+### }
+###
+### ✅ VER TRIAJE (200 OK):
+### {
+###   "patient": {
+###     "id": 6,
+###     "email": "maria.gomez@example.com",
+###     "first_name": "Maria",
+###     "last_name": "Gomez"
+###   },
+###   "answers": {...},
+###   "pre_diagnosis": "Posible Trastorno de Ansiedad Generalizada",
+###   "recommendation": "Se recomienda terapia...",
+###   "created_at": "2025-11-05T10:30:00Z"
+### }
+###
+### ❌ ERROR TRIAJE DUPLICADO (400 Bad Request):
+### {
+###   "error": "Ya existe un triaje inicial para este paciente"
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 NOTAS IMPORTANTES:
+###
+### 1. El triaje solo se completa UNA VEZ por paciente
+### 2. Después de completar el triaje, el paciente puede agendar citas
+### 3. El campo "has_completed_triage" en el login indica si ya lo hizo
+### 4. Si has_completed_triage = false, el frontend debe mostrar el formulario
+### 5. El triaje es visible para todos los profesionales que atiendan al paciente
+###
+### ═══════════════════════════════════════════════════════════

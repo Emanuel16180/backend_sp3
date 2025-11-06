@@ -1,0 +1,282 @@
+### ═══════════════════════════════════════════════════════════
+### 📝 FLUJO: HISTORIA CLÍNICA Y NOTAS DE SESIÓN
+### Archivo: 23_profesional_historia_clinica.http
+### Endpoints: /api/clinical-history/, /api/appointments/appointments/{id}/note/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO PROFESIONAL
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "dra.martinez@bienestar.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER HISTORIAL CLÍNICO DE UN PACIENTE
+### GET /api/clinical-history/patient/{patient_id}/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/patient/5/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ CREAR/ACTUALIZAR HISTORIAL CLÍNICO
+### POST /api/clinical-history/patient/{patient_id}/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/patient/5/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "consultation_reason": "Ansiedad generalizada y estrés laboral",
+  "history_of_illness": "Paciente refiere sintomatología ansiosa desde hace 6 meses, coincidiendo con cambio de puesto laboral. Síntomas: preocupación excesiva, dificultad para concentrarse, tensión muscular, problemas de sueño.",
+  "personal_pathological_history": "Sin antecedentes psiquiátricos previos. No hospitalizaciones. No intentos de suicidio.",
+  "family_history": "Madre con diagnóstico de trastorno depresivo mayor tratado. Sin otros antecedentes familiares relevantes.",
+  "personal_non_pathological_history": {
+    "alimentacion": "Regular, tiende a omitir comidas por estrés",
+    "sueno": "Irregular, 4-6 horas por noche",
+    "ejercicio": "Sedentario",
+    "sustancias": "Consumo ocasional de alcohol social, no tabaco, no drogas"
+  },
+  "mental_examination": {
+    "conciencia": "Lúcido, orientado en tiempo, espacio y persona",
+    "atencion": "Disminuida por preocupaciones",
+    "memoria": "Conservada",
+    "pensamiento": "Curso acelerado, contenido con preocupaciones",
+    "lenguaje": "Coherente, fluido",
+    "afecto": "Ansioso, tenso",
+    "percepcion": "Sin alteraciones"
+  },
+  "diagnoses": [
+    {
+      "code": "F41.1",
+      "description": "Trastorno de ansiedad generalizada",
+      "type": "principal"
+    }
+  ],
+  "therapeutic_plan": {
+    "psicoterapia": "Terapia Cognitivo-Conductual, sesiones semanales",
+    "farmacoterapia": "No indicado por el momento",
+    "intervenciones": [
+      "Técnicas de relajación",
+      "Reestructuración cognitiva",
+      "Manejo del estrés"
+    ]
+  },
+  "risk_assessment": {
+    "suicidio": "Bajo",
+    "autolesion": "Bajo",
+    "heteroagresion": "Bajo"
+  },
+  "sensitive_topics": "Relación conflictiva con supervisor en trabajo"
+}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ ACTUALIZAR PARTE DEL HISTORIAL
+### PATCH /api/clinical-history/patient/{patient_id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/clinical-history/patient/5/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "therapeutic_plan": {
+    "psicoterapia": "Terapia Cognitivo-Conductual, sesiones semanales (4 sesiones completadas)",
+    "farmacoterapia": "No indicado",
+    "intervenciones": [
+      "Técnicas de relajación - Avance: Bueno",
+      "Reestructuración cognitiva - En proceso",
+      "Manejo del estrés - Iniciado",
+      "Mindfulness - Nuevo"
+    ],
+    "progreso": "Paciente muestra mejoría en manejo de ansiedad"
+  }
+}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ GUARDAR NOTA DE SESIÓN (PRIVADA)
+### POST /api/appointments/appointments/{appointment_id}/note/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/appointments/1/note/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "content": "**Fecha:** 05/11/2025\n**Sesión #:** 5\n\n**Motivo de consulta:**\nSeguimiento de terapia cognitivo-conductual para manejo de ansiedad.\n\n**Evaluación:**\n- Paciente refiere mejoría en calidad de sueño (6-7 horas)\n- Disminución de síntomas físicos de ansiedad\n- Mayor capacidad para identificar pensamientos distorsionados\n\n**Intervenciones realizadas:**\n1. Revisión de tareas de la semana (registro de pensamientos)\n2. Práctica de reestructuración cognitiva\n3. Técnicas de respiración diafragmática\n\n**Tareas asignadas:**\n- Continuar registro diario de pensamientos\n- Practicar respiración 2 veces al día\n- Implementar técnica de mindfulness 10 minutos\n\n**Observaciones:**\nPaciente muestra mayor insight sobre sus procesos cognitivos. Buen cumplimiento de tareas.\n\n**Plan:**\nContinuar con sesiones semanales. Considerar espaciar a quincenal en 2-3 sesiones más."
+}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ VER NOTA DE UNA SESIÓN
+### GET /api/appointments/appointments/{appointment_id}/note/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/1/note/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ ACTUALIZAR NOTA DE SESIÓN
+### PATCH /api/appointments/appointments/{appointment_id}/note/{note_id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/appointments/1/note/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "content": "**Fecha:** 05/11/2025\n**Sesión #:** 5\n\n[ACTUALIZADO]\n\n**Motivo de consulta:**\nSeguimiento de terapia cognitivo-conductual para manejo de ansiedad.\n\n... (contenido actualizado)"
+}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ VER MIS PACIENTES ANTERIORES
+### GET /api/clinical-history/my-patients/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/my-patients/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ ASIGNAR OBJETIVO TERAPÉUTICO
+### POST /api/clinical-history/objectives/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/objectives/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "patient": 5,
+  "appointment": 1,
+  "title": "Reducir niveles de ansiedad",
+  "description": "Lograr disminución significativa de síntomas ansiosos mediante técnicas de relajación y reestructuración cognitiva"
+}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ ASIGNAR TAREAS AL OBJETIVO
+### POST /api/clinical-history/objectives/{objective_id}/tasks/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/objectives/1/tasks/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Meditación guiada",
+  "recurrence": "daily"
+}
+
+###
+
+POST {{baseUrl}}/api/clinical-history/objectives/1/tasks/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Registro de pensamientos automáticos",
+  "recurrence": "daily"
+}
+
+###
+
+POST {{baseUrl}}/api/clinical-history/objectives/1/tasks/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Sesión de ejercicio físico",
+  "recurrence": "weekly"
+}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 VER TRIAJE INICIAL DEL PACIENTE
+### GET /api/clinical-history/patient/{patient_id}/triage/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/patient/5/triage/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Intentar ver historial de paciente que no has atendido
+GET {{baseUrl}}/api/clinical-history/patient/999/
+Authorization: Token {{authToken}}
+
+###
+
+### ERROR: Crear nota para cita que no es tuya
+POST {{baseUrl}}/api/appointments/appointments/999/note/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "content": "Nota de prueba"
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ HISTORIAL CLÍNICO (200 OK):
+### {
+###   "patient": {
+###     "id": 5,
+###     "first_name": "Juan",
+###     "last_name": "Perez",
+###     "email": "juan.perez@example.com",
+###     "age": 35
+###   },
+###   "consultation_reason": "Ansiedad generalizada...",
+###   "history_of_illness": "Paciente refiere...",
+###   "personal_pathological_history": "Sin antecedentes...",
+###   "family_history": "Madre con diagnóstico...",
+###   "personal_non_pathological_history": {...},
+###   "mental_examination": {...},
+###   "diagnoses": [...],
+###   "therapeutic_plan": {...},
+###   "risk_assessment": {...},
+###   "sensitive_topics": "Relación conflictiva...",
+###   "created_by": {...},
+###   "last_updated_by": {...},
+###   "created_at": "2025-11-01T10:00:00Z",
+###   "updated_at": "2025-11-05T14:30:00Z"
+### }
+###
+### ✅ NOTA CREADA (201 Created):
+### {
+###   "id": 15,
+###   "appointment": {...},
+###   "content": "**Fecha:** 05/11/2025...",
+###   "created_at": "2025-11-05T15:00:00Z",
+###   "updated_at": "2025-11-05T15:00:00Z"
+### }
+###
+### ✅ MIS PACIENTES (200 OK):
+### [
+###   {
+###     "id": 5,
+###     "first_name": "Juan",
+###     "last_name": "Perez",
+###     "email": "juan.perez@example.com",
+###     "total_appointments": 5,
+###     "last_appointment": "2025-11-05",
+###     "has_clinical_history": true
+###   }
+### ]
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 NOTAS IMPORTANTES:
+###
+### 1. El historial clínico es ÚNICO por paciente
+### 2. Las notas de sesión son PRIVADAS (solo el profesional las ve)
+### 3. Solo puedes ver/editar historiales de pacientes que has atendido
+### 4. Las notas admiten formato Markdown
+### 5. El triaje inicial lo completa el paciente al registrarse
+###
+### ═══════════════════════════════════════════════════════════

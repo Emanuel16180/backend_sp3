@@ -1,0 +1,248 @@
+### ═══════════════════════════════════════════════════════════
+### 🎯 FLUJO: OBJETIVOS Y TAREAS TERAPÉUTICAS
+### Archivo: 15_paciente_objetivos_tareas.http
+### Endpoints: /api/clinical-history/objectives/, /api/clinical-history/tasks/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO PACIENTE
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER MIS OBJETIVOS ACTIVOS
+### GET /api/clinical-history/objectives/my/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/objectives/my/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ VER TODOS MIS OBJETIVOS (ACTIVOS + COMPLETADOS)
+### GET /api/clinical-history/objectives/my/?status=all
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/objectives/my/?status=all
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ VER OBJETIVOS COMPLETADOS
+### GET /api/clinical-history/objectives/my/?status=completed
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/objectives/my/?status=completed
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ VER DETALLE DE UN OBJETIVO (CON SUS TAREAS)
+### GET /api/clinical-history/objectives/{id}/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/objectives/1/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ VER MIS ESTADÍSTICAS DE OBJETIVOS
+### GET /api/clinical-history/objectives/my/stats/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/objectives/my/stats/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ COMPLETAR UNA TAREA - PRIMERA VEZ HOY
+### POST /api/clinical-history/tasks/{task_id}/complete/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/tasks/1/complete/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "notes": "Realicé 15 minutos de meditación por la mañana. Me sentí más relajado."
+}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ COMPLETAR TAREA SIN NOTAS
+### POST /api/clinical-history/tasks/{task_id}/complete/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/tasks/2/complete/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ VER PROGRESO DE TAREAS DE LA SEMANA
+### GET /api/clinical-history/tasks/progress/?days=7
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/tasks/progress/?days=7
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ VER TODAS MIS TAREAS COMPLETADAS
+### GET /api/clinical-history/tasks/completed/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/tasks/completed/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 VER TAREAS COMPLETADAS DE UN OBJETIVO ESPECÍFICO
+### GET /api/clinical-history/tasks/completed/?objective_id=1
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/tasks/completed/?objective_id=1
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣1️⃣ VER TAREAS PENDIENTES DE HOY
+### GET /api/clinical-history/tasks/pending-today/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/tasks/pending-today/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Completar la misma tarea dos veces en el mismo día
+POST {{baseUrl}}/api/clinical-history/tasks/1/complete/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "notes": "Segundo intento del día"
+}
+
+###
+
+### ERROR: Tarea no existe
+POST {{baseUrl}}/api/clinical-history/tasks/999/complete/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{}
+
+###
+
+### ERROR: Acceso sin autenticación
+GET {{baseUrl}}/api/clinical-history/objectives/my/
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ LISTA DE OBJETIVOS (200 OK):
+### [
+###   {
+###     "id": 1,
+###     "title": "Reducir niveles de ansiedad",
+###     "description": "Practicar técnicas de respiración y meditación diariamente",
+###     "status": "active",
+###     "psychologist": {
+###       "id": 2,
+###       "first_name": "Laura",
+###       "last_name": "Martinez"
+###     },
+###     "appointment": 10,
+###     "created_at": "2025-11-01T10:00:00Z",
+###     "tasks": [
+###       {
+###         "id": 1,
+###         "title": "Meditación guiada",
+###         "recurrence": "daily",
+###         "recurrence_display": "Diaria",
+###         "completions_count": 5,
+###         "last_completed": "2025-11-05"
+###       },
+###       {
+###         "id": 2,
+###         "title": "Ejercicios de respiración",
+###         "recurrence": "daily",
+###         "completions_count": 3,
+###         "last_completed": "2025-11-04"
+###       }
+###     ]
+###   }
+### ]
+###
+### ✅ ESTADÍSTICAS (200 OK):
+### {
+###   "total_objectives": 3,
+###   "active_objectives": 2,
+###   "completed_objectives": 1,
+###   "total_tasks": 8,
+###   "tasks_completed_this_week": 15,
+###   "tasks_completed_this_month": 45,
+###   "completion_rate_week": 71.4,
+###   "current_streak_days": 5
+### }
+###
+### ✅ TAREA COMPLETADA (201 Created):
+### {
+###   "id": 50,
+###   "task": {
+###     "id": 1,
+###     "title": "Meditación guiada",
+###     "recurrence": "daily"
+###   },
+###   "completed_date": "2025-11-05",
+###   "notes": "Realicé 15 minutos de meditación...",
+###   "patient": 5
+### }
+###
+### ✅ PROGRESO DE TAREAS (200 OK):
+### {
+###   "period": "last_7_days",
+###   "start_date": "2025-10-29",
+###   "end_date": "2025-11-05",
+###   "total_expected": 21,
+###   "total_completed": 15,
+###   "completion_rate": 71.4,
+###   "daily_breakdown": [
+###     {
+###       "date": "2025-11-05",
+###       "expected": 3,
+###       "completed": 3,
+###       "tasks": [...]
+###     }
+###   ]
+### }
+###
+### ❌ ERROR TAREA DUPLICADA (400 Bad Request):
+### {
+###   "error": "Ya completaste esta tarea hoy"
+### }
+###
+### ❌ ERROR NO ENCONTRADA (404 Not Found):
+### {
+###   "detail": "No encontrado."
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 TIPOS DE RECURRENCIA:
+### - "once" - Una vez
+### - "daily" - Diaria
+### - "weekly" - Semanal
+###
+### 💡 ESTADOS DE OBJETIVOS:
+### - "active" - Activo
+### - "completed" - Completado
+### - "cancelled" - Cancelado
+###
+### 💡 NOTAS IMPORTANTES:
+### 1. Los objetivos son asignados por el psicólogo durante las sesiones
+### 2. Las tareas están vinculadas a objetivos
+### 3. Una tarea se puede completar UNA VEZ por día
+### 4. Las tareas recurrentes permiten completarse múltiples días
+### 5. El progreso se calcula basado en la recurrencia de cada tarea
+###
+### ═══════════════════════════════════════════════════════════

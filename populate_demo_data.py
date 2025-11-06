@@ -170,8 +170,16 @@ def create_demo_data_for_tenant(tenant_name, data):
                     'education': 'Universidad de ejemplo',
                     'experience_years': 5,
                     'consultation_fee': Decimal('50.00'),
+                    'is_active': True,
+                    'profile_completed': True,
                 }
             )
+            
+            # Actualizar perfiles existentes que no tengan estos campos marcados
+            if not created:
+                professional.is_active = True
+                professional.profile_completed = True
+                professional.save()
             
             # Asignar especialidad
             specialization = specializations[prof_data['specialty']]

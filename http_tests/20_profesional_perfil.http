@@ -1,0 +1,300 @@
+### ═══════════════════════════════════════════════════════════
+### 👨‍⚕️ FLUJO: PERFIL PROFESIONAL DEL PSICÓLOGO
+### Archivo: 20_profesional_perfil.http
+### Endpoints: /api/professionals/profile/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO PROFESIONAL
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "dra.martinez@bienestar.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER MI PERFIL PROFESIONAL
+### GET /api/professionals/profile/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ CREAR PERFIL PROFESIONAL (PRIMERA VEZ)
+### POST /api/professionals/profile/
+### Solo para nuevos profesionales sin perfil
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "license_number": "PSI-2024-015",
+  "bio": "Psicóloga clínica con enfoque cognitivo-conductual. Especializada en trastornos de ansiedad y depresión. Me apasiona ayudar a las personas a encontrar herramientas para mejorar su bienestar emocional.",
+  "education": "Licenciatura en Psicología - UMSA (2012-2016). Maestría en Psicología Clínica - UCB (2017-2019). Diplomado en Terapia Cognitivo Conductual (2020).",
+  "experience_years": 8,
+  "consultation_fee": 250.00,
+  "session_duration": 60,
+  "accepts_online_sessions": true,
+  "accepts_in_person_sessions": true,
+  "office_address": "Calle 21 de Calacoto #456, Edificio Medical Center, Piso 3",
+  "city": "La Paz",
+  "state": "La Paz"
+}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ ACTUALIZAR MI PERFIL PROFESIONAL
+### PATCH /api/professionals/profile/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "bio": "Psicóloga clínica con más de 8 años de experiencia. Especializada en terapia cognitivo-conductual para ansiedad, depresión y estrés. Enfoque empático y basado en evidencia científica.",
+  "consultation_fee": 280.00,
+  "session_duration": 50,
+  "office_address": "Av. Arce #1234, Torre Empresarial, Oficina 502"
+}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ AÑADIR ESPECIALIZACIÓN
+### POST /api/professionals/profile/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "specializations": [1, 3]
+}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ VER TODAS LAS ESPECIALIZACIONES DISPONIBLES
+### GET /api/professionals/specializations/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/professionals/specializations/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ SUBIR DOCUMENTOS DE VERIFICACIÓN
+### POST /api/professionals/upload-verification/
+### ⚠️ Archivos a Supabase Storage
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/professionals/upload-verification/
+Authorization: Token {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="description"
+
+Título Universitario en Psicología
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="titulo.pdf"
+Content-Type: application/pdf
+
+< ./test_files/titulo.pdf
+------WebKitFormBoundary--
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ SUBIR SEGUNDO DOCUMENTO (LICENCIA)
+### POST /api/professionals/upload-verification/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/professionals/upload-verification/
+Authorization: Token {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="description"
+
+Licencia Profesional vigente
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="licencia.pdf"
+Content-Type: application/pdf
+
+< ./test_files/licencia.pdf
+------WebKitFormBoundary--
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ VER MIS DOCUMENTOS DE VERIFICACIÓN
+### GET /api/professionals/verification-documents/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/professionals/verification-documents/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ CAMBIAR DISPONIBILIDAD DE SESIONES
+### PATCH /api/professionals/profile/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "accepts_online_sessions": true,
+  "accepts_in_person_sessions": false
+}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 ACTUALIZAR TARIFA DE CONSULTA
+### PATCH /api/professionals/profile/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "consultation_fee": 300.00
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣1️⃣ VER MIS COLEGAS (OTROS PROFESIONALES)
+### GET /api/professionals/colleagues/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/professionals/colleagues/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Intentar crear perfil cuando ya existe uno
+POST {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "license_number": "PSI-2024-999",
+  "bio": "Test",
+  "education": "Test",
+  "experience_years": 5,
+  "consultation_fee": 200.00
+}
+
+###
+
+### ERROR: Número de licencia duplicado
+POST {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "license_number": "PSI-2024-001",
+  "bio": "Test",
+  "education": "Test",
+  "experience_years": 5,
+  "consultation_fee": 200.00
+}
+
+###
+
+### ERROR: Tarifa negativa
+PATCH {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "consultation_fee": -100.00
+}
+
+###
+
+### ERROR: Años de experiencia inválidos
+PATCH {{baseUrl}}/api/professionals/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "experience_years": 100
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ VER PERFIL (200 OK):
+### {
+###   "id": 2,
+###   "user": {
+###     "id": 2,
+###     "email": "dra.martinez@bienestar.com",
+###     "first_name": "Laura",
+###     "last_name": "Martinez",
+###     "phone": "70123456",
+###     "profile_picture": "/media/profile_pictures/laura.jpg"
+###   },
+###   "license_number": "PSI-2024-001",
+###   "specializations": [
+###     {
+###       "id": 1,
+###       "name": "Psicologia Clinica",
+###       "description": "..."
+###     }
+###   ],
+###   "bio": "Psicóloga clínica con enfoque...",
+###   "education": "Licenciatura en Psicología...",
+###   "experience_years": 8,
+###   "consultation_fee": "250.00",
+###   "session_duration": 60,
+###   "accepts_online_sessions": true,
+###   "accepts_in_person_sessions": true,
+###   "office_address": "Calle 21 de Calacoto #456...",
+###   "city": "La Paz",
+###   "state": "La Paz",
+###   "average_rating": "4.80",
+###   "total_reviews": 15,
+###   "is_verified": true,
+###   "is_active": true,
+###   "profile_completed": true
+### }
+###
+### ✅ PERFIL CREADO (201 Created):
+### {
+###   "message": "Perfil profesional creado exitosamente",
+###   "profile": {...}
+### }
+###
+### ✅ DOCUMENTO SUBIDO (201 Created):
+### {
+###   "id": 5,
+###   "professional": 2,
+###   "description": "Título Universitario en Psicología",
+###   "file_url": "https://supabase.co/storage/v1/...",
+###   "status": "pending",
+###   "uploaded_at": "2025-11-05T15:30:00Z"
+### }
+###
+### ❌ ERROR PERFIL EXISTENTE (400 Bad Request):
+### {
+###   "error": "Ya tienes un perfil profesional"
+### }
+###
+### ❌ ERROR VALIDACIÓN (400 Bad Request):
+### {
+###   "consultation_fee": [
+###     "Asegúrese de que este valor sea mayor o igual a 0."
+###   ]
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 NOTAS IMPORTANTES:
+###
+### 1. El perfil debe estar completo antes de recibir pacientes
+### 2. is_verified debe ser True para aparecer en búsquedas
+### 3. El admin verifica los documentos subidos
+### 4. consultation_fee se cobra por cada sesión
+### 5. session_duration define la duración de cada cita
+###
+### ═══════════════════════════════════════════════════════════

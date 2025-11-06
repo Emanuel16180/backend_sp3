@@ -1,0 +1,301 @@
+### ═══════════════════════════════════════════════════════════
+### ✅ FLUJO: VERIFICACIÓN DE PROFESIONALES
+### Archivo: 31_admin_verificacion.http
+### Endpoints: /api/clinic-admin/professionals/verification/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO ADMINISTRADOR
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "admin@bienestar.com",
+  "password": "admin123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER PROFESIONALES PENDIENTES DE VERIFICACIÓN
+### GET /api/clinic-admin/professionals/pending-verification/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/professionals/pending-verification/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ VER DETALLE DE VERIFICACIÓN DE UN PROFESIONAL
+### GET /api/clinic-admin/professionals/{id}/verification/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/professionals/3/verification/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ APROBAR VERIFICACIÓN DE PROFESIONAL
+### POST /api/clinic-admin/professionals/{id}/approve/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinic-admin/professionals/3/approve/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "notes": "Documentación completa y verificada. Licencia válida PSI-12345."
+}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ RECHAZAR VERIFICACIÓN DE PROFESIONAL
+### POST /api/clinic-admin/professionals/{id}/reject/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinic-admin/professionals/4/reject/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "reason": "rejected_incomplete_documents",
+  "notes": "Falta título profesional y cédula profesional legible. Por favor, vuelve a subir los documentos completos."
+}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ SOLICITAR MÁS INFORMACIÓN
+### POST /api/clinic-admin/professionals/{id}/request-info/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinic-admin/professionals/5/request-info/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "message": "Por favor proporciona:\n1. Cédula profesional más reciente\n2. Certificado de especialización en TCC\n3. Constancia de no inhabilitación"
+}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ VER DOCUMENTOS SUBIDOS POR EL PROFESIONAL
+### GET /api/clinic-admin/professionals/{id}/documents/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/professionals/3/documents/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ VER HISTORIAL DE VERIFICACIÓN
+### GET /api/clinic-admin/professionals/{id}/verification-history/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/professionals/3/verification-history/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ VER PROFESIONALES VERIFICADOS
+### GET /api/clinic-admin/professionals/?is_verified=true
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/professionals/?is_verified=true
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ VER PROFESIONALES RECHAZADOS
+### GET /api/clinic-admin/professionals/?verification_status=rejected
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/professionals/?verification_status=rejected
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 REVOCAR VERIFICACIÓN (PARA RE-VERIFICACIÓN)
+### POST /api/clinic-admin/professionals/{id}/revoke-verification/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinic-admin/professionals/3/revoke-verification/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "reason": "Documentación vencida - requiere actualización",
+  "notes": "La cédula profesional está próxima a vencer. Solicitar renovación."
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣1️⃣ MARCAR DOCUMENTO COMO REVISADO
+### PATCH /api/clinic-admin/professionals/{professional_id}/documents/{doc_id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/clinic-admin/professionals/3/documents/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "is_verified": true,
+  "admin_notes": "Cédula profesional válida. Número PSI-12345 verificado en sistema nacional."
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣2️⃣ RECHAZAR UN DOCUMENTO ESPECÍFICO
+### PATCH /api/clinic-admin/professionals/{professional_id}/documents/{doc_id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/clinic-admin/professionals/4/documents/2/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "is_verified": false,
+  "admin_notes": "Imagen borrosa, no se puede leer el número de cédula. Por favor vuelve a subir con mejor calidad."
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣3️⃣ VER ESTADÍSTICAS DE VERIFICACIÓN
+### GET /api/clinic-admin/verification-stats/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinic-admin/verification-stats/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Aprobar sin documentos suficientes
+POST {{baseUrl}}/api/clinic-admin/professionals/999/approve/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "notes": "Aprobado"
+}
+
+###
+
+### ERROR: Rechazar sin motivo
+POST {{baseUrl}}/api/clinic-admin/professionals/4/reject/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ PENDIENTES DE VERIFICACIÓN (200 OK):
+### [
+###   {
+###     "id": 4,
+###     "user": {
+###       "id": 4,
+###       "first_name": "Carlos",
+###       "last_name": "Rodriguez",
+###       "email": "carlos.rodriguez@bienestar.com"
+###     },
+###     "license_number": "PSI-67890",
+###     "years_of_experience": 5,
+###     "specializations": ["Terapia Familiar"],
+###     "verification_status": "pending",
+###     "documents_count": 3,
+###     "submitted_at": "2025-11-01T15:00:00Z",
+###     "days_waiting": 4
+###   }
+### ]
+###
+### ✅ DETALLE DE VERIFICACIÓN (200 OK):
+### {
+###   "professional": {
+###     "id": 3,
+###     "name": "Laura Martinez",
+###     "email": "dra.martinez@bienestar.com",
+###     "license_number": "PSI-12345"
+###   },
+###   "verification_status": "pending",
+###   "documents": [
+###     {
+###       "id": 1,
+###       "document_type": "license",
+###       "file_name": "cedula_profesional.pdf",
+###       "file_url": "https://supabase.co/.../cedula.pdf",
+###       "uploaded_at": "2025-11-01T10:00:00Z",
+###       "is_verified": false,
+###       "admin_notes": null
+###     },
+###     {
+###       "id": 2,
+###       "document_type": "degree",
+###       "file_name": "titulo_psicologia.pdf",
+###       "file_url": "https://supabase.co/.../titulo.pdf",
+###       "uploaded_at": "2025-11-01T10:05:00Z",
+###       "is_verified": false,
+###       "admin_notes": null
+###     }
+###   ],
+###   "submitted_at": "2025-11-01T10:00:00Z",
+###   "last_update": "2025-11-01T10:05:00Z"
+### }
+###
+### ✅ APROBACIÓN EXITOSA (200 OK):
+### {
+###   "message": "Profesional verificado exitosamente",
+###   "professional": {
+###     "id": 3,
+###     "name": "Laura Martinez",
+###     "verification_status": "approved",
+###     "is_verified": true,
+###     "verified_at": "2025-11-05T10:30:00Z"
+###   }
+### }
+###
+### ✅ RECHAZO EXITOSO (200 OK):
+### {
+###   "message": "Verificación rechazada",
+###   "professional": {
+###     "id": 4,
+###     "name": "Carlos Rodriguez",
+###     "verification_status": "rejected",
+###     "is_verified": false,
+###     "rejection_reason": "rejected_incomplete_documents",
+###     "rejection_notes": "Falta título profesional..."
+###   }
+### }
+###
+### ✅ ESTADÍSTICAS (200 OK):
+### {
+###   "total_professionals": 25,
+###   "pending_verification": 5,
+###   "verified": 18,
+###   "rejected": 2,
+###   "average_verification_time_days": 3.5,
+###   "verifications_this_month": 8
+### }
+###
+### ❌ ERROR SIN PERMISOS (403 Forbidden):
+### {
+###   "detail": "Solo los administradores pueden verificar profesionales."
+### }
+###
+### ❌ ERROR PROFESIONAL NO EXISTE (404 Not Found):
+### {
+###   "detail": "No se encontró el profesional."
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 ESTADOS DE VERIFICACIÓN:
+###
+### - pending: Esperando revisión del admin
+### - approved: Verificado y puede atender pacientes
+### - rejected: Rechazado, debe corregir y volver a enviar
+### - info_requested: Admin solicita información adicional
+###
+### 💡 TIPOS DE DOCUMENTOS:
+###
+### - license: Cédula profesional
+### - degree: Título universitario
+### - specialization: Certificados de especialización
+### - id_card: Identificación oficial
+### - proof_of_address: Comprobante de domicilio
+### - other: Otros documentos
+###
+### 💡 RAZONES DE RECHAZO:
+###
+### - rejected_incomplete_documents: Documentos incompletos
+### - rejected_invalid_license: Licencia inválida o vencida
+### - rejected_quality_issues: Problemas de calidad de imagen
+### - rejected_mismatched_info: Información no coincide
+### - rejected_other: Otro motivo (especificar en notes)
+###
+### ═══════════════════════════════════════════════════════════
