@@ -246,8 +246,18 @@ REST_FRAMEWORK = {
 
 # URLs de producción y desarrollo
 CORS_ALLOWED_ORIGINS = [
+    # 🚀 PRODUCCIÓN - Subdominios de psicoadmin.xyz
+    "https://api.psicoadmin.xyz",
+    "https://bienestar.psicoadmin.xyz",
+    "https://mindcare.psicoadmin.xyz",
+    "https://app.psicoadmin.xyz",
+    
+    # Vercel (legacy)
     "https://psico-admin-sp1-despliegue-front.vercel.app",
-    # Puertos locales comunes para desarrollo
+    "https://bienestar-psico.vercel.app",
+    "https://mindcare-psico.vercel.app",
+    
+    # 🛠️ DESARROLLO LOCAL - Puertos comunes
     "http://localhost:3000",      # React (Create React App)
     "http://localhost:5173",      # Vite
     "http://localhost:5174",      # Vite (puerto alternativo)
@@ -256,12 +266,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
-    # Subdominios específicos para desarrollo
-     "https://bienestar-psico.vercel.app",  # Tu deployment de Vercel para Bienestar
-    "https://mindcare-psico.vercel.app",   # Tu deployment de Vercel para Mindcare
-    "http://localhost:3000",               # Desarrollo local
-    "http://localhost:5173", 
-
+    
+    # Subdominios específicos para desarrollo local
     "http://bienestar.localhost:5174",
     "http://mindcare.localhost:5174",
     "http://bienestar.localhost:3000",
@@ -270,17 +276,33 @@ CORS_ALLOWED_ORIGINS = [
     "http://mindcare.localhost:5173",
 ]
 
-# Patrones regex para permitir cualquier subdominio localhost
+# Patrones regex para permitir cualquier subdominio localhost y producción
 CORS_ALLOWED_ORIGIN_REGEXES = [
+    # Desarrollo local
     r"^http://\w+\.localhost:\d+$",     # Permite http://<cualquier-cosa>.localhost:<puerto>
     r"^http://localhost:\d+$",          # Permite http://localhost:<puerto>
     r"^http://127\.0\.0\.1:\d+$",       # Permite http://127.0.0.1:<puerto>
     r"^https://\w+\.localhost:\d+$",    # Permite https://<cualquier-cosa>.localhost:<puerto>
-    r"^https://.*\.vercel\.app$",
-    r"^https://.*\.psicoadmin\.xyz$",
+    
+    # Producción
+    r"^https://.*\.vercel\.app$",       # Cualquier subdominio de vercel.app
+    r"^https://.*\.psicoadmin\.xyz$",   # ✅ Cualquier subdominio de psicoadmin.xyz
 ]
 # Asegúrate de que esta línea también esté presente
 CORS_ALLOW_CREDENTIALS = True
+
+# 🔐 CSRF - Orígenes confiables para formularios
+CSRF_TRUSTED_ORIGINS = [
+    # Producción
+    "https://api.psicoadmin.xyz",
+    "https://bienestar.psicoadmin.xyz",
+    "https://mindcare.psicoadmin.xyz",
+    "https://app.psicoadmin.xyz",
+    # Vercel
+    "https://psico-admin-sp1-despliegue-front.vercel.app",
+    "https://bienestar-psico.vercel.app",
+    "https://mindcare-psico.vercel.app",
+]
 
 # Headers permitidos para las solicitudes CORS
 CORS_ALLOW_HEADERS = [
