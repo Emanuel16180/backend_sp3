@@ -1,7 +1,7 @@
 # apps/clinic_admin/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserManagementViewSet, PaymentReportView
+from .views import UserManagementViewSet, PaymentReportView, BackupConfigView
 
 # Creamos un router para los ViewSets
 router = DefaultRouter()
@@ -13,4 +13,5 @@ router.register(r'reports/payments', PaymentReportView, basename='payment-report
 urlpatterns = [
     # El router ahora maneja todas las URLs
     path('', include(router.urls)),
+    path('config/backup/', BackupConfigView.as_view(), name='backup-config'),
 ]

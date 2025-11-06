@@ -27,6 +27,11 @@ from apps.professionals.models import VerificationDocument
 from apps.professionals.serializers import VerificationDocumentSerializer
 from datetime import date, timedelta
 
+from apps.tenants.models import Clinic
+from .serializers import BackupConfigSerializer
+import logging
+logger = logging.getLogger('apps')
+
 class UserManagementViewSet(viewsets.ModelViewSet):
     """
     Gestión de usuarios (pacientes y profesionales) para administradores de la clínica.
@@ -324,3 +329,26 @@ class PaymentReportView(viewsets.ReadOnlyModelViewSet):
         response = HttpResponse(buffer, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="reporte_pagos_{date.today()}.pdf"'
         return response
+
+class BackupConfigView(generics.RetrieveUpdateAPIView):
+    """
+    Endpoint para que un Admin de clínica vea (GET) y 
+    actualice (PUT/PATCH) la configuración de backups automáticos.
+    """
+    serializer_class = BackupConfigSerializer
+    permission_classes = [IsClinicAdmin]
+
+    def get_object(self):
+        # El "objeto" que estamos editando es la propia
+        # clínica (tenant) a la que el admin está conectado.
+        return self.request.tenant
+
+    def perform_update(self, serializer):
+        # Guardamos el cambio
+        serializer.save()
+        
+        # Registramos en el log de auditoría
+        logger.info(
+            f"Admin '{self.request.user.email}' actualizó la config de backup a "
+            f"'{serializer.validated_data.get('backup_schedule')}'"
+        )
