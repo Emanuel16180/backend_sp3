@@ -9,14 +9,28 @@ from .serializers import ChatMessageSerializer
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def chat_messages_view(request, appointment_id):
+    """
+    Endpoint para Chat Simulado (HTTP Polling).
+    """
     if request.method == 'GET':
-        # Obtener todos los mensajes de esta cita
-        messages = ChatMessage.objects.filter(appointment_id=appointment_id)
-        serializer = ChatMessageSerializer(messages, many=True)
+        # 1. Obtener mensajes de la cita
+        queryset = ChatMessage.objects.filter(appointment_id=appointment_id)
+        
+        # 2. LÓGICA DE POLING: Filtrar solo los nuevos
+        # El frontend enviará ?last_id=50 para pedir solo los que llegaron después
+        last_id = request.query_params.get('last_id')
+        
+        if last_id:
+            queryset = queryset.filter(id__gt=last_id)
+        
+        # Ordenar por antigüedad (los más viejos primero para mantener el hilo)
+        queryset = queryset.order_by('timestamp')
+        
+        serializer = ChatMessageSerializer(queryset, many=True)
         return Response(serializer.data)
     
     elif request.method == 'POST':
-        # Crear nuevo mensaje
+        # Guardar mensaje nuevo (Esto no cambia)
         serializer = ChatMessageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(

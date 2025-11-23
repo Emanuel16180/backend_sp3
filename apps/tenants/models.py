@@ -103,6 +103,7 @@ class Clinic(TenantMixin):
         ('disabled', 'Desactivado'),
         ('daily', 'Diario'),
         ('weekly', 'Semanal'),
+        ('scheduled', 'Programado por Fecha'),
     )
     backup_schedule = models.CharField(
         max_length=10,
@@ -114,6 +115,11 @@ class Clinic(TenantMixin):
         null=True, 
         blank=True,
         help_text="Fecha y hora del último backup automático."
+    )
+    next_scheduled_backup = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Fecha y hora exacta programada para el próximo backup."
     )
 
     # auto_create_schema se asegura de que django-tenants cree automáticamente
