@@ -104,8 +104,8 @@ def send_push_notification(request):
         "icon": "/icons/icon-192x192.png"  // opcional
     }
     """
-    # Verificar permisos
-    if not (request.user.is_staff or request.user.role == 'admin'):
+    # Verificar permisos (staff, admin, o professional)
+    if not (request.user.is_staff or request.user.user_type in ['admin', 'professional']):
         return Response(
             {'error': 'No tienes permisos para enviar notificaciones'},
             status=status.HTTP_403_FORBIDDEN
