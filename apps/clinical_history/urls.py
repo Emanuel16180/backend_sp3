@@ -42,6 +42,35 @@ urlpatterns = [
          name='my-prescriptions'
     ),
 
+    # --- 👇 RUTAS PARA RECORDATORIOS DE MEDICAMENTOS 👇 ---
+    
+    # CRUD completo de recordatorios
+    path(
+        'medication-reminders/',
+        views.MedicationReminderViewSet.as_view({
+            'get': 'list',
+            'post': 'create'
+        }),
+        name='medication-reminder-list'
+    ),
+    path(
+        'medication-reminders/<int:pk>/',
+        views.MedicationReminderViewSet.as_view({
+            'get': 'retrieve',
+            'put': 'update',
+            'patch': 'partial_update',
+            'delete': 'destroy'
+        }),
+        name='medication-reminder-detail'
+    ),
+    
+    # Vista simplificada para pacientes
+    path(
+        'medication-reminders/my-reminders/',
+        views.MyMedicationRemindersView.as_view(),
+        name='my-medication-reminders'
+    ),
+
     # --- (Tus URLs existentes se quedan igual) ---
     path('objectives/', views.ObjectiveCreateView.as_view(), name='objective-create'),
     path('objectives/my/', views.MyObjectivesListView.as_view(), name='objective-list-my'),

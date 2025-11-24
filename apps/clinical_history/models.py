@@ -359,3 +359,41 @@ class Prescription(models.Model):
 
     def __str__(self):
         return f"{self.medication_name} ({self.dosage}) para {self.patient.get_full_name()}"
+
+
+class MedicationReminder(models.Model):
+    """
+    Modelo para recordatorios de medicamentos.
+    Cada prescripción puede tener múltiples recordatorios (ej: mañana y noche).
+    """
+    prescription = models.ForeignKey(
+        Prescription,
+        on_delete=models.CASCADE,
+        related_name='reminders'
+    )
+    
+    # Hora del recordatorio
+    time = models.TimeField(help_text="Hora del recordatorio (ej: 08:00, 20:00)")
+    
+    # Días de la semana (0=Lunes, 6=Domingo)
+    days_of_week = models.JSONField(
+        default=list,
+        help_text="Lista de días: [1,2,3,4,5] para L-V, [0,1,2,3,4,5,6] para todos"
+    )
+    
+    # Estado
+    is_active = models.BooleanField(default=True)
+    send_notification = models.BooleanField(default=True, help_text="Enviar notificación push")
+    
+    # Tracking
+    last_sent = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'medication_reminders'
+        verbose_name = 'Recordatorio de Medicamento'
+        verbose_name_plural = 'Recordatorios de Medicamentos'
+        ordering = ['time']
+    
+    def __str__(self):
+        return f"{self.prescription.medication_name} - {self.time.strftime('%H:%M')}"

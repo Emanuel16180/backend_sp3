@@ -1,7 +1,7 @@
 # apps/clinical_history/serializers.py
 
 from rest_framework import serializers
-from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion , Prescription  # <-- 1. IMPORTA EL NUEVO MODELO
+from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion, Prescription, MedicationReminder
 from apps.users.models import CustomUser
 
 class SessionNoteSerializer(serializers.ModelSerializer):
@@ -352,6 +352,7 @@ class PrescriptionSerializer(serializers.ModelSerializer):
     """
     patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
     psychiatrist_name = serializers.CharField(source='psychiatrist.get_full_name', read_only=True)
+    reminders = serializers.SerializerMethodField()
     
     class Meta:
         model = Prescription
@@ -367,7 +368,50 @@ class PrescriptionSerializer(serializers.ModelSerializer):
             'notes',
             'is_active',
             'prescribed_date',
-            'end_date'
+            'end_date',
+            'reminders'
         ]
         # El psiquiatra se asigna automáticamente desde la vista
         read_only_fields = ['psychiatrist', 'psychiatrist_name', 'patient_name', 'prescribed_date']
+    
+    def get_reminders(self, obj):
+        """Incluye los recordatorios de esta prescripción"""
+        reminders = obj.reminders.filter(is_active=True)
+        return MedicationReminderSerializer(reminders, many=True).data
+
+
+class MedicationReminderSerializer(serializers.ModelSerializer):
+    """
+    Serializer para recordatorios de medicamentos
+    """
+    medication_name = serializers.CharField(source='prescription.medication_name', read_only=True)
+    dosage = serializers.CharField(source='prescription.dosage', read_only=True)
+    
+    class Meta:
+        model = MedicationReminder
+        fields = [
+            'id',
+            'prescription',
+            'medication_name',
+            'dosage',
+            'time',
+            'days_of_week',
+            'is_active',
+            'send_notification',
+            'last_sent',
+            'created_at'
+        ]
+        read_only_fields = ['last_sent', 'created_at', 'medication_name', 'dosage']
+    
+    def validate_days_of_week(self, value):
+        """Valida que los días sean entre 0-6"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Debe ser una lista de números")
+        
+        if not all(isinstance(day, int) and 0 <= day <= 6 for day in value):
+            raise serializers.ValidationError("Los días deben ser números entre 0 (Lunes) y 6 (Domingo)")
+        
+        if not value:
+            raise serializers.ValidationError("Debe especificar al menos un día")
+        
+        return value

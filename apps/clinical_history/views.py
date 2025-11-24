@@ -5,12 +5,13 @@ import os
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse, Http404
 from django.conf import settings
-from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion, Prescription # <-- IMPORTA ClinicalHistory
-from .serializers import SessionNoteSerializer, ClinicalDocumentSerializer, PsychologistPatientSerializer, ClinicalHistorySerializer, InitialTriageSubmitSerializer, MoodJournalSerializer, ObjectiveSerializer, ObjectiveCreateSerializer, TaskCompletionSerializer, PrescriptionSerializer# <-- IMPORTA ClinicalHistorySerializer
+from .models import SessionNote, ClinicalDocument, ClinicalHistory, InitialTriage, MoodJournal, Objective, Task, TaskCompletion, Prescription, MedicationReminder
+from .serializers import SessionNoteSerializer, ClinicalDocumentSerializer, PsychologistPatientSerializer, ClinicalHistorySerializer, InitialTriageSubmitSerializer, MoodJournalSerializer, ObjectiveSerializer, ObjectiveCreateSerializer, TaskCompletionSerializer, PrescriptionSerializer, MedicationReminderSerializer
 from apps.appointments.models import Appointment
 from apps.users.models import CustomUser
 from datetime import date, timedelta
@@ -550,3 +551,64 @@ class MyPrescriptionsListView(generics.ListAPIView):
     def get_queryset(self):
         """Devuelve solo las recetas del paciente logueado."""
         return Prescription.objects.filter(patient=self.request.user)
+
+
+class MedicationReminderViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar recordatorios de medicamentos
+    """
+    serializer_class = MedicationReminderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """
+        Pacientes ven solo sus recordatorios.
+        Profesionales ven todos (para gestión).
+        """
+        user = self.request.user
+        
+        if user.user_type == 'patient':
+            # Pacientes ven sus propios recordatorios
+            return MedicationReminder.objects.filter(
+                prescription__patient=user
+            ).select_related('prescription')
+        else:
+            # Profesionales pueden ver todos
+            return MedicationReminder.objects.all().select_related('prescription')
+    
+    def perform_create(self, serializer):
+        """
+        Valida que la prescripción sea activa y pertenezca al paciente correcto
+        """
+        prescription = serializer.validated_data['prescription']
+        
+        # Validar que la prescripción esté activa
+        if not prescription.is_active:
+            raise ValidationError({
+                'prescription': 'No se pueden crear recordatorios para prescripciones inactivas'
+            })
+        
+        # Si es paciente, validar que sea su propia prescripción
+        if self.request.user.user_type == 'patient':
+            if prescription.patient != self.request.user:
+                raise ValidationError({
+                    'prescription': 'No puedes crear recordatorios para prescripciones de otros pacientes'
+                })
+        
+        serializer.save()
+
+
+class MyMedicationRemindersView(generics.ListAPIView):
+    """
+    Vista para que el paciente vea sus recordatorios de medicamentos activos
+    """
+    serializer_class = MedicationReminderSerializer
+    permission_classes = [permissions.IsAuthenticated, IsPatient]
+    
+    def get_queryset(self):
+        """Solo recordatorios activos de prescripciones activas"""
+        return MedicationReminder.objects.filter(
+            prescription__patient=self.request.user,
+            prescription__is_active=True,
+            is_active=True
+        ).select_related('prescription').order_by('time')
