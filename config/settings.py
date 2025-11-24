@@ -87,6 +87,7 @@ TENANT_APPS = (
     'apps.payment_system',  # Sistema de pagos con Stripe
     'apps.backups',  # <-- AÑADE ESTA LÍNEA
     'apps.auditlog',  # Sistema de bitácora de auditoría
+    'apps.notifications',  # Sistema de notificaciones push
 )
 
 # --- CONFIGURACIÓN FINAL DE INSTALLED_APPS ---
@@ -477,3 +478,9 @@ USE_S3_STORAGE = config("USE_S3_STORAGE", default=not DEBUG, cast=bool)
 SUPABASE_URL = config("SUPABASE_URL", default="https://xefqugptdzubukeowcnj.supabase.co")
 SUPABASE_KEY = config("SUPABASE_KEY", default="eyJhbG...sr_o") # Tu clave larga
 SUPABASE_BUCKET_NAME = config("SUPABASE_BUCKET_NAME", default="documentos-verificacion")
+# ---------------------------------------------------------------
+# CONFIGURACI�N DE NOTIFICACIONES PUSH (VAPID)
+# ---------------------------------------------------------------
+VAPID_PUBLIC_KEY = config("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = config("VAPID_PRIVATE_KEY", default="")
+VAPID_CLAIM_EMAIL = config("VAPID_CLAIM_EMAIL", default="admin@psicoadmin.xyz")

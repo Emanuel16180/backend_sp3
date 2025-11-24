@@ -62,6 +62,13 @@ def api_root_tenant(request):
                 'logs': '/api/auditlog/',
                 'filtrar': '/api/auditlog/?user=<id>&action=<action>',
             },
+            'notificaciones': {
+                'suscribirse': '/api/notifications/subscribe/',
+                'desuscribirse': '/api/notifications/unsubscribe/',
+                'enviar': '/api/notifications/send/',
+                'clave_publica': '/api/notifications/vapid-public-key/',
+                'historial': '/api/notifications/history/',
+            },
         },
         'admin_panel': '/admin/',
         'documentation': 'https://github.com/tu-repo/docs',
@@ -85,6 +92,7 @@ urlpatterns = [
     path('api/chat/', include('apps.chat.urls')),           # Chat por WebSocket
     path('api/backups/', include('apps.backups.urls')),     # Sistema de backups
     path('api/auditlog/', include('apps.auditlog.urls')),   # 👈 NUEVA: Sistema de bitácora
+    path('api/notifications/', include('apps.notifications.urls')),  # Sistema de notificaciones push
     
     # API browsable (para desarrollo)
     path('api-auth/', include('rest_framework.urls')),
