@@ -269,6 +269,8 @@ def clinic_detail_stats(request, clinic_id):
 
 from rest_framework.permissions import AllowAny
 from .serializers import TenantRegistrationSerializer, SubdomainCheckSerializer
+from django.http import HttpResponse
+from datetime import datetime
 
 @api_view(['POST'])
 @permission_classes([AllowAny])  # ⭐ Acceso público
@@ -284,6 +286,9 @@ def register_tenant(request):
         "admin_phone": "+34 600 000 000",  // opcional
         "address": "Calle Principal 123"    // opcional
     }
+    
+    Query params:
+    ?download=true  -> Descarga archivo TXT con credenciales
     """
     serializer = TenantRegistrationSerializer(data=request.data)
     
@@ -291,29 +296,91 @@ def register_tenant(request):
         try:
             result = serializer.save()
             
-            response_data = {
-                'success': True,
-                'message': '¡Clínica creada exitosamente!',
-                'data': {
-                    'clinic_name': result['tenant'].name,
-                    'subdomain': result['subdomain'],
-                    'admin_url': f"https://{result['subdomain']}.psicoadmin.xyz/admin/",
-                    'frontend_url': f"https://{result['subdomain']}-app.psicoadmin.xyz/",
-                    'admin_email': result['admin_email'],
-                    'temporary_password': result['temporary_password'],
-                    'instructions': (
-                        f"Tu clínica ha sido creada exitosamente. "
-                        f"Puedes acceder al panel de administración en: "
-                        f"https://{result['subdomain']}.psicoadmin.xyz/admin/ "
-                        f"usando tu email y la contraseña temporal proporcionada. "
-                        f"Por favor, cámbiala después del primer acceso."
-                    )
+            # Verificar si se solicita descarga
+            download = request.query_params.get('download', 'false').lower() == 'true'
+            
+            if download:
+                # Generar archivo de texto con credenciales
+                fecha_creacion = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                contenido = f"""
+╔════════════════════════════════════════════════════════════════╗
+║          CREDENCIALES DE ADMINISTRADOR - NUEVA CLÍNICA         ║
+╚════════════════════════════════════════════════════════════════╝
+
+📋 INFORMACIÓN DE LA CLÍNICA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Nombre de la Clínica:  {result['tenant'].name}
+Subdominio:            {result['subdomain']}
+Fecha de Creación:     {fecha_creacion}
+
+
+🔐 CREDENCIALES DEL ADMINISTRADOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email:                 {result['admin_email']}
+Contraseña Temporal:   {result['temporary_password']}
+
+
+🌐 ENLACES DE ACCESO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Panel de Administración:
+  https://{result['subdomain']}.psicoadmin.xyz/admin/
+
+Aplicación Web (Frontend):
+  https://{result['subdomain']}.psicoadmin.xyz/
+
+
+⚠️  INSTRUCCIONES IMPORTANTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Accede al panel de administración usando las credenciales arriba.
+2. CAMBIA LA CONTRASEÑA TEMPORAL inmediatamente después del primer acceso.
+3. Guarda este archivo en un lugar seguro.
+4. No compartas estas credenciales por correo electrónico o mensajes sin cifrar.
+
+
+📞 SOPORTE TÉCNICO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Si tienes problemas para acceder, contacta a soporte técnico.
+
+
+═══════════════════════════════════════════════════════════════════
+Sistema PsicoAdmin - Gestión de Clínicas de Salud Mental
+Generado automáticamente el {fecha_creacion}
+═══════════════════════════════════════════════════════════════════
+"""
+                
+                # Crear respuesta HTTP con archivo de texto
+                response = HttpResponse(contenido, content_type='text/plain; charset=utf-8')
+                filename = f"credenciales_{result['subdomain']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                
+                logger.info(f"✅ Nueva clínica registrada con descarga: {result['tenant'].name} ({result['subdomain']})")
+                
+                return response
+            else:
+                # Respuesta JSON normal
+                response_data = {
+                    'success': True,
+                    'message': '¡Clínica creada exitosamente!',
+                    'data': {
+                        'clinic_name': result['tenant'].name,
+                        'subdomain': result['subdomain'],
+                        'admin_url': f"https://{result['subdomain']}.psicoadmin.xyz/admin/",
+                        'frontend_url': f"https://{result['subdomain']}.psicoadmin.xyz/",
+                        'admin_email': result['admin_email'],
+                        'temporary_password': result['temporary_password'],
+                        'instructions': (
+                            f"Tu clínica ha sido creada exitosamente. "
+                            f"Puedes acceder al panel de administración en: "
+                            f"https://{result['subdomain']}.psicoadmin.xyz/admin/ "
+                            f"usando tu email y la contraseña temporal proporcionada. "
+                            f"Por favor, cámbiala después del primer acceso."
+                        )
+                    }
                 }
-            }
-            
-            logger.info(f"✅ Nueva clínica registrada: {result['tenant'].name} ({result['subdomain']})")
-            
-            return Response(response_data, status=status.HTTP_201_CREATED)
+                
+                logger.info(f"✅ Nueva clínica registrada: {result['tenant'].name} ({result['subdomain']})")
+                
+                return Response(response_data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
             logger.error(f"❌ Error en registro de tenant: {str(e)}")
@@ -379,15 +446,51 @@ def public_clinic_list(request):
     Vista pública para listar todas las clínicas disponibles.
     Usada por la app móvil para el selector de clínicas.
     No requiere autenticación.
+    
+    GET /api/tenants/
+    
+    Response:
+    {
+        "count": 2,
+        "results": [
+            {
+                "id": 2,
+                "name": "Clínica Bienestar",
+                "schema_name": "bienestar",
+                "description": "Clínica especializada en bienestar mental",
+                "logo": null
+            },
+            {
+                "id": 3,
+                "name": "Clínica MindCare",
+                "schema_name": "mindcare",
+                "description": "Cuidado mental profesional",
+                "logo": null
+            }
+        ]
+    }
     """
     try:
+        from django.db import connection
+        
+        # Guardar el schema actual
+        current_schema = connection.schema_name if hasattr(connection, 'schema_name') else None
+        
+        logger.info(f"📋 public_clinic_list - Schema actual: {current_schema}")
+        
         # Forzar el uso del schema público para acceder a todas las clínicas
         with schema_context('public'):
+            logger.info("📋 Accediendo al schema público para listar clínicas...")
+            
             # Obtener todas las clínicas (excluyendo el schema público)
-            clinics = Clinic.objects.exclude(schema_name='public')
+            clinics = Clinic.objects.exclude(schema_name='public').order_by('id')
+            
+            logger.info(f"📋 Clínicas encontradas: {clinics.count()}")
             
             clinics_data = []
             for clinic in clinics:
+                logger.info(f"📋 Procesando clínica: {clinic.name} (schema: {clinic.schema_name})")
+                
                 # Obtener el dominio principal
                 domain = Domain.objects.filter(tenant=clinic, is_primary=True).first()
                 
@@ -395,10 +498,16 @@ def public_clinic_list(request):
                     'id': clinic.id,
                     'name': clinic.name,
                     'schema_name': clinic.schema_name,
-                    'description': '',  # El modelo no tiene description
-                    'domain': domain.domain if domain else None
+                    'description': f"Clínica {clinic.name}",  # Descripción por defecto
+                    'logo': None  # El modelo no tiene logo por ahora
                 }
+                
+                if domain:
+                    logger.info(f"   Dominio: {domain.domain}")
+                
                 clinics_data.append(clinic_data)
+        
+        logger.info(f"✅ public_clinic_list - Devolviendo {len(clinics_data)} clínicas")
         
         return Response({
             'count': len(clinics_data),
@@ -406,7 +515,7 @@ def public_clinic_list(request):
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
-        logger.error(f"Error listando clínicas públicas: {str(e)}")
+        logger.error(f"❌ Error listando clínicas públicas: {str(e)}", exc_info=True)
         return Response(
             {'error': 'Error al obtener lista de clínicas', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
