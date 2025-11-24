@@ -10,7 +10,11 @@ from .views import (
     ConfirmPaymentView,
     ListPlansForPurchaseView,
     PurchasePlanView,
-    MyPurchasedPlansView
+    MyPurchasedPlansView,
+    # Mobile endpoints
+    create_payment_intent_appointment,
+    create_payment_intent_plan,
+    confirm_payment_intent
 )
 
 urlpatterns = [
@@ -34,4 +38,11 @@ urlpatterns = [
     
     # Obtener clave pública de Stripe
     path('stripe-public-key/', GetStripePublicKeyView.as_view(), name='stripe-public-key'),
+    
+    # ============================================
+    # ENDPOINTS PARA FLUTTER MOBILE
+    # ============================================
+    path('mobile/create-intent-appointment/', create_payment_intent_appointment, name='mobile-create-intent-appointment'),
+    path('mobile/create-intent-plan/', create_payment_intent_plan, name='mobile-create-intent-plan'),
+    path('mobile/confirm-payment/', confirm_payment_intent, name='mobile-confirm-payment'),
 ]

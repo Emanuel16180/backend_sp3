@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 # Configurar Stripe con la clave secreta
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+from rest_framework.decorators import api_view, permission_classes
+
 class CreateCheckoutSessionView(APIView):
     """
     Vista para crear una sesión de pago en Stripe.
@@ -514,3 +516,341 @@ class MyPurchasedPlansView(generics.ListAPIView):
             patient=self.request.user,
             is_active=True
         )
+
+
+# ============================================
+# ENDPOINTS PARA FLUTTER MOBILE (Payment Intent)
+# ============================================
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_payment_intent_appointment(request):
+    """
+    Crea Payment Intent para pagar cita desde Flutter mobile.
+    Retorna client_secret para usar con flutter_stripe Payment Sheet.
+    
+    POST /api/payments/mobile/create-intent-appointment/
+    Body: {
+        "psychologist": 14,
+        "appointment_date": "2025-11-25",
+        "start_time": "10:00",
+        "reason": "Consulta inicial"
+    }
+    """
+    data = request.data
+    
+    # Validar y crear cita preliminar
+    serializer = AppointmentCreateSerializer(data=data, context={'request': request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    validated_data = serializer.validated_data
+    
+    # Limpiar citas fantasma
+    Appointment.objects.filter(
+        psychologist=validated_data['psychologist'],
+        appointment_date=validated_data['appointment_date'],
+        start_time=validated_data['start_time'],
+        status='pending',
+        is_paid=False
+    ).delete()
+    
+    # Crear cita preliminar
+    appointment = serializer.save(status='pending', is_paid=False)
+    
+    # Obtener tarifa
+    psychologist = validated_data['psychologist']
+    if not hasattr(psychologist, 'professional_profile'):
+        appointment.delete()
+        return Response({
+            'error': 'Este usuario no tiene un perfil profesional configurado.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    fee = psychologist.professional_profile.consultation_fee
+    if not fee or fee <= 0:
+        appointment.delete()
+        return Response({
+            'error': 'Este profesional no tiene una tarifa configurada.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Obtener o crear cliente de Stripe
+        patient = request.user
+        if not patient.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=patient.email,
+                name=f"{patient.first_name} {patient.last_name}"
+            )
+            patient.stripe_customer_id = customer.id
+            patient.save()
+        
+        # Crear Payment Intent
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(fee * 100),  # Convertir a centavos
+            currency='usd',
+            customer=patient.stripe_customer_id,
+            metadata={
+                'appointment_id': appointment.id,
+                'patient_id': patient.id,
+                'psychologist_id': psychologist.id,
+                'tenant_schema_name': request.tenant.schema_name,
+                'payment_type': 'appointment'
+            },
+            description=f'Cita con {psychologist.get_full_name()}'
+        )
+        
+        logger.info(f"Payment Intent creado: {payment_intent.id} para cita {appointment.id}")
+        
+        return Response({
+            'client_secret': payment_intent.client_secret,
+            'payment_intent_id': payment_intent.id,
+            'appointment_id': appointment.id,
+            'amount': fee,
+            'currency': 'usd',
+            'publishable_key': settings.STRIPE_PUBLISHABLE_KEY
+        })
+        
+    except stripe.error.StripeError as e:
+        appointment.delete()
+        logger.error(f"Error de Stripe: {str(e)}")
+        return Response({
+            'error': f'Error del servicio de pagos: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        appointment.delete()
+        logger.error(f"Error general: {str(e)}")
+        return Response({
+            'error': 'Error interno del servidor'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_payment_intent_plan(request):
+    """
+    Crea Payment Intent para comprar plan desde Flutter mobile.
+    
+    POST /api/payments/mobile/create-intent-plan/
+    Body: {
+        "plan_id": 5
+    }
+    """
+    plan_id = request.data.get('plan_id')
+    
+    if not plan_id:
+        return Response({
+            'error': 'plan_id es requerido'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        plan = CarePlan.objects.get(id=plan_id, is_active=True)
+    except CarePlan.DoesNotExist:
+        return Response({
+            'error': 'Plan no encontrado o inactivo'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Verificar que el usuario no tenga ya este plan activo
+    existing_plan = PatientPlan.objects.filter(
+        patient=request.user,
+        plan=plan,
+        is_active=True,
+        end_date__gte=timezone.now()
+    ).first()
+    
+    if existing_plan:
+        return Response({
+            'error': 'Ya tienes este plan activo'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Obtener o crear cliente de Stripe
+        patient = request.user
+        if not patient.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=patient.email,
+                name=f"{patient.first_name} {patient.last_name}"
+            )
+            patient.stripe_customer_id = customer.id
+            patient.save()
+        
+        # Crear Payment Intent
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(plan.price * 100),
+            currency='usd',
+            customer=patient.stripe_customer_id,
+            metadata={
+                'plan_id': plan.id,
+                'patient_id': patient.id,
+                'tenant_schema_name': request.tenant.schema_name,
+                'payment_type': 'plan'
+            },
+            description=f'Plan: {plan.name}'
+        )
+        
+        logger.info(f"Payment Intent para plan creado: {payment_intent.id}")
+        
+        return Response({
+            'client_secret': payment_intent.client_secret,
+            'payment_intent_id': payment_intent.id,
+            'plan_id': plan.id,
+            'amount': plan.price,
+            'currency': 'usd',
+            'publishable_key': settings.STRIPE_PUBLISHABLE_KEY
+        })
+        
+    except stripe.error.StripeError as e:
+        logger.error(f"Error de Stripe: {str(e)}")
+        return Response({
+            'error': f'Error del servicio de pagos: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        logger.error(f"Error general: {str(e)}")
+        return Response({
+            'error': 'Error interno del servidor'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def confirm_payment_intent(request):
+    """
+    Confirma que el pago fue exitoso y actualiza la cita/plan.
+    Flutter llama a este endpoint después de presentPaymentSheet().
+    
+    POST /api/payments/mobile/confirm-payment/
+    Body: {
+        "payment_intent_id": "pi_xxxxx"
+    }
+    """
+    payment_intent_id = request.data.get('payment_intent_id')
+    
+    if not payment_intent_id:
+        return Response({
+            'error': 'payment_intent_id es requerido'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Obtener Payment Intent de Stripe
+        payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        
+        if payment_intent.status != 'succeeded':
+            return Response({
+                'error': 'El pago no ha sido completado',
+                'status': payment_intent.status
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        metadata = payment_intent.metadata
+        payment_type = metadata.get('payment_type')
+        
+        # Verificar el tenant
+        if metadata.get('tenant_schema_name') != request.tenant.schema_name:
+            return Response({
+                'error': 'Tenant incorrecto'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if payment_type == 'appointment':
+            # Confirmar cita
+            appointment_id = int(metadata.get('appointment_id'))
+            appointment = Appointment.objects.get(id=appointment_id)
+            
+            if appointment.is_paid:
+                return Response({
+                    'message': 'Esta cita ya fue pagada',
+                    'appointment_id': appointment.id
+                })
+            
+            appointment.is_paid = True
+            appointment.status = 'scheduled'
+            appointment.save()
+            
+            # Crear registro de transacción
+            PaymentTransaction.objects.create(
+                user=request.user,
+                appointment=appointment,
+                amount=Decimal(payment_intent.amount) / 100,
+                currency=payment_intent.currency.upper(),
+                stripe_payment_intent_id=payment_intent.id,
+                status='completed'
+            )
+            
+            logger.info(f"Cita {appointment.id} confirmada vía mobile")
+            
+            return Response({
+                'success': True,
+                'message': 'Pago confirmado exitosamente',
+                'appointment_id': appointment.id,
+                'status': 'scheduled'
+            })
+            
+        elif payment_type == 'plan':
+            # Activar plan
+            plan_id = int(metadata.get('plan_id'))
+            plan = CarePlan.objects.get(id=plan_id)
+            
+            # Verificar si ya existe
+            existing = PatientPlan.objects.filter(
+                patient=request.user,
+                plan=plan,
+                stripe_payment_intent_id=payment_intent.id
+            ).first()
+            
+            if existing:
+                return Response({
+                    'message': 'Este plan ya fue activado',
+                    'patient_plan_id': existing.id
+                })
+            
+            # Crear plan de paciente
+            from datetime import timedelta
+            patient_plan = PatientPlan.objects.create(
+                patient=request.user,
+                plan=plan,
+                start_date=timezone.now(),
+                end_date=timezone.now() + timedelta(days=plan.duration_days),
+                sessions_remaining=plan.total_sessions,
+                is_active=True,
+                stripe_payment_intent_id=payment_intent.id
+            )
+            
+            # Crear transacción
+            PaymentTransaction.objects.create(
+                user=request.user,
+                patient_plan=patient_plan,
+                amount=Decimal(payment_intent.amount) / 100,
+                currency=payment_intent.currency.upper(),
+                stripe_payment_intent_id=payment_intent.id,
+                status='completed'
+            )
+            
+            logger.info(f"Plan {plan.id} activado vía mobile para usuario {request.user.id}")
+            
+            return Response({
+                'success': True,
+                'message': 'Plan activado exitosamente',
+                'patient_plan_id': patient_plan.id,
+                'sessions_remaining': patient_plan.sessions_remaining
+            })
+        
+        else:
+            return Response({
+                'error': 'Tipo de pago desconocido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Appointment.DoesNotExist:
+        return Response({
+            'error': 'Cita no encontrada'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except CarePlan.DoesNotExist:
+        return Response({
+            'error': 'Plan no encontrado'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except stripe.error.StripeError as e:
+        logger.error(f"Error de Stripe: {str(e)}")
+        return Response({
+            'error': f'Error del servicio de pagos: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        logger.error(f"Error en confirmación: {str(e)}")
+        return Response({
+            'error': 'Error interno del servidor'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
