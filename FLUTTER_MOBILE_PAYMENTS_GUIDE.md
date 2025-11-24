@@ -71,7 +71,10 @@ platform :ios, '13.0'
 
 ```dart
 // main.dart
+import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -863,7 +866,7 @@ if (response.statusCode != 200) {
 Stripe.publishableKey = 'pk_live_xxxxx'; // ⚠️ Clave de producción
 ```
 
-### 2. Configurar Webhooks en Stripe
+### 2. Configurar Webhooks en Stripe (Opcional)
 
 1. Ve a Stripe Dashboard → Webhooks
 2. Añade endpoint: `https://api.psicoadmin.xyz/api/payments/stripe-webhook/`
@@ -871,11 +874,15 @@ Stripe.publishableKey = 'pk_live_xxxxx'; // ⚠️ Clave de producción
    - `payment_intent.succeeded`
    - `payment_intent.payment_failed`
 
+**Nota:** Los webhooks son opcionales en mobile porque la confirmación se hace desde la app. Sin embargo, son útiles como respaldo por si la app se cierra antes de confirmar.
+
 ### 3. Verificar en Producción
 
-- Hacer una compra de prueba real (con tarjeta real)
-- Verificar en Stripe Dashboard que aparece
-- Verificar que la cita/plan se activa correctamente
+1. Hacer una compra de prueba pequeña (mínimo permitido)
+2. Verificar en Stripe Dashboard que el Payment Intent aparece como `succeeded`
+3. Verificar que la cita se marca como `is_paid=True` y `status=scheduled`
+4. Verificar que se crea el registro en `PaymentTransaction`
+5. Probar con tarjeta 3D Secure para autenticación completa
 
 ---
 
