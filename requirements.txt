@@ -44,9 +44,11 @@ pillow==11.3.0
 postgrest==2.23.0
 propcache==0.4.1
 psycopg2-binary==2.9.10
+py-vapid==1.9.2
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pycparser==2.23
+pywebpush==2.1.2
 pydantic==2.12.3
 pydantic_core==2.41.4
 PyJWT==2.10.1
