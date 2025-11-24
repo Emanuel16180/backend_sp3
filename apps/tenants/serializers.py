@@ -189,7 +189,7 @@ class TenantRegistrationSerializer(serializers.Serializer):
                 first_name='Admin',
                 last_name=clinic_name,
                 phone=admin_phone,
-                role='admin',
+                user_type='admin',  # ← Corregido: user_type en vez de role
                 is_staff=True,
                 is_superuser=True,
             )
