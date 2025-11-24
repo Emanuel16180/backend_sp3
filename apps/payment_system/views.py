@@ -101,9 +101,15 @@ class CreateCheckoutSessionView(APIView):
                     frontend_host = f"{backend_host}:3000"
                 protocol = 'http'
             else:
-                # Producción - usar HTTPS y el mismo subdominio
-                # backend_host será algo como: bienestar.psicoadmin.xyz
-                frontend_host = backend_host
+                # Producción - usar HTTPS
+                # Obtener el dominio del tenant desde el schema_name
+                tenant_domain = request.tenant.schema_name
+                if tenant_domain == 'public':
+                    # Si es público, usar psicoadmin.xyz
+                    frontend_host = 'psicoadmin.xyz'
+                else:
+                    # Para tenants específicos: bienestar.psicoadmin.xyz, mindcare.psicoadmin.xyz
+                    frontend_host = f"{tenant_domain}.psicoadmin.xyz"
                 protocol = 'https'
             
             logger.info(f"Redirigiendo pagos desde {backend_host} hacia {protocol}://{frontend_host}")
@@ -442,11 +448,23 @@ class PurchasePlanView(APIView):
         # (Lógica de Stripe copiada de CreateCheckoutSessionView)
         try:
             backend_host = request.get_host()
+            
+            # Determinar el protocolo y host del frontend
             if 'localhost' in backend_host or '127.0.0.1' in backend_host:
-                frontend_host = backend_host.replace(':8000', ':5174') # Ajusta tu puerto
+                # Desarrollo local
+                if ':8000' in backend_host:
+                    frontend_host = backend_host.replace(':8000', ':5174')
+                else:
+                    frontend_host = f"{backend_host}:3000"
                 protocol = 'http'
             else:
-                frontend_host = backend_host
+                # Producción - usar HTTPS
+                # Obtener el dominio del tenant desde el schema_name
+                tenant_domain = request.tenant.schema_name
+                if tenant_domain == 'public':
+                    frontend_host = 'psicoadmin.xyz'
+                else:
+                    frontend_host = f"{tenant_domain}.psicoadmin.xyz"
                 protocol = 'https'
 
             checkout_session = stripe.checkout.Session.create(
