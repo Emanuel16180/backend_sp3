@@ -12,6 +12,7 @@ from apps.notifications.models import PushSubscription
 from pywebpush import webpush, WebPushException
 from django.conf import settings
 from django_tenants.utils import schema_context, get_tenant_model
+from py_vapid import Vapid
 import json
 import logging
 
@@ -167,15 +168,22 @@ class Command(BaseCommand):
     def get_vapid_key(self):
         """
         Obtiene la clave VAPID en el formato correcto.
+        Maneja tanto formato PEM como raw base64.
         """
-        from py_vapid import Vapid
-        
         private_key = settings.VAPID_PRIVATE_KEY.strip()
         
-        # Si la clave está en formato PEM, convertirla
+        # Validar que la clave está configurada correctamente
+        if not private_key or len(private_key) < 50:
+            raise ValueError(
+                "VAPID_PRIVATE_KEY no está configurada correctamente. "
+                "Debe ser una clave PEM completa o raw base64."
+            )
+        
+        # Si la clave está en formato PEM (completo), convertirla
         if private_key.startswith('-----BEGIN'):
             vapid = Vapid.from_pem(private_key.encode())
             return vapid
         else:
-            # Si es formato raw, usarla directamente
+            # Si es formato raw base64 (sin headers), usarla directamente
+            # pywebpush espera el string raw
             return private_key
