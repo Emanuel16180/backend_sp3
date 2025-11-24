@@ -165,11 +165,10 @@ class TenantRegistrationSerializer(serializers.Serializer):
         address = validated_data.get('address', '')
         
         # 1. Crear el tenant (clínica)
+        # Nota: Clinic solo tiene 'schema_name' y 'name', no 'address' ni 'phone'
         tenant = Clinic.objects.create(
             schema_name=subdomain,
             name=clinic_name,
-            address=address,
-            phone=admin_phone,
         )
         
         # 2. Crear el dominio
@@ -188,7 +187,8 @@ class TenantRegistrationSerializer(serializers.Serializer):
                 email=admin_email,
                 first_name='Admin',
                 last_name=clinic_name,
-                phone=admin_phone,
+                phone=admin_phone if admin_phone else '',
+                address=address if address else '',
                 user_type='admin',  # ← Corregido: user_type en vez de role
                 is_staff=True,
                 is_superuser=True,
