@@ -7,6 +7,7 @@ from django.utils import timezone
 from pywebpush import webpush, WebPushException
 import json
 import logging
+from py_vapid import Vapid
 
 from .models import PushSubscription, PushNotification
 from .serializers import (
@@ -16,6 +17,23 @@ from .serializers import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_vapid_key():
+    """
+    Obtiene la clave VAPID en el formato correcto.
+    Maneja tanto formato PEM como raw base64.
+    """
+    private_key = settings.VAPID_PRIVATE_KEY.strip()
+    
+    # Si la clave está en formato PEM (completo), convertirla
+    if private_key.startswith('-----BEGIN'):
+        vapid = Vapid.from_pem(private_key.encode())
+        return vapid
+    else:
+        # Si es formato raw base64 (sin headers), usarla directamente
+        # pywebpush espera el string raw
+        return private_key
 
 
 @api_view(['POST'])
@@ -190,6 +208,9 @@ def _send_push_to_user(user_id, payload):
         "sub": f"mailto:{settings.VAPID_CLAIM_EMAIL}"
     }
     
+    # Obtener clave VAPID
+    vapid_key = get_vapid_key()
+    
     # Crear registro de notificación
     notification = PushNotification.objects.create(
         user=user,
@@ -206,7 +227,7 @@ def _send_push_to_user(user_id, payload):
             webpush(
                 subscription_info=subscription.to_dict(),
                 data=json.dumps(payload),
-                vapid_private_key=settings.VAPID_PRIVATE_KEY.strip(),
+                vapid_private_key=vapid_key,
                 vapid_claims=vapid_claims
             )
             
