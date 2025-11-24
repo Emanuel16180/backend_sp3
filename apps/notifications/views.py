@@ -243,15 +243,15 @@ def _send_push_to_user(user_id, payload):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_vapid_public_key(request):
     """
     Obtener la clave pública VAPID para suscripciones.
+    Endpoint público - no requiere autenticación.
     
     GET /api/notifications/vapid-public-key/
     """
     return Response({
-        'publicKey': settings.VAPID_PUBLIC_KEY
+        'public_key': settings.VAPID_PUBLIC_KEY
     })
 
 
