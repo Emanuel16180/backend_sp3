@@ -206,7 +206,7 @@ def _send_push_to_user(user_id, payload):
             webpush(
                 subscription_info=subscription.to_dict(),
                 data=json.dumps(payload),
-                vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                vapid_private_key=settings.VAPID_PRIVATE_KEY.strip(),
                 vapid_claims=vapid_claims
             )
             
