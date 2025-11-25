@@ -19,6 +19,13 @@ from .serializers import PaymentTransactionSerializer, PaymentConfirmationSerial
 from django.utils import timezone
 from decimal import Decimal
 import logging
+from django.db.models import Q
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from apps.appointments.views import IsPsychologist
+from .serializers import PsychologistPaymentSerializer
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -854,3 +861,139 @@ def confirm_payment_intent(request):
         return Response({
             'error': 'Error interno del servidor'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# --- CU-27: Historial de Pagos para Psicólogos ---
+
+class PsychologistPaymentHistoryView(generics.ListAPIView):
+    """
+    Endpoint para que el Psicólogo vea los pagos que ha recibido.
+    Soporta filtros por fecha y paciente.
+    """
+    serializer_class = PsychologistPaymentSerializer
+    permission_classes = [IsPsychologist]
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Buscar transacciones donde el usuario es el psicólogo de la cita
+        # O el creador del plan vendido
+        queryset = PaymentTransaction.objects.filter(
+            Q(appointment__psychologist=user) | 
+            Q(patient_plan__plan__psychologist=user),
+            status='completed'
+        ).order_by('-paid_at')
+
+        # --- Filtros ---
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        patient_name = self.request.query_params.get('patient_name')
+
+        if start_date:
+            queryset = queryset.filter(paid_at__gte=start_date)
+        if end_date:
+            # Ajuste para incluir el día final completo
+            from datetime import timedelta
+            end_date_dt = datetime.strptime(end_date, '%Y-%m-%d').date() + timedelta(days=1)
+            queryset = queryset.filter(paid_at__lt=end_date_dt)
+        
+        if patient_name:
+            queryset = queryset.filter(
+                Q(patient__first_name__icontains=patient_name) | 
+                Q(patient__last_name__icontains=patient_name)
+            )
+
+        return queryset
+
+
+# --- CU-26: Generar y Descargar Factura Automática ---
+
+class DownloadInvoiceView(APIView):
+    """
+    Genera un PDF simple con los detalles de la transacción.
+    Accesible para el Paciente (dueño) y el Psicólogo (receptor).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, transaction_id):
+        # 1. Obtener la transacción
+        transaction = get_object_or_404(PaymentTransaction, id=transaction_id)
+
+        # 2. Verificar permisos (Solo el paciente o el psicólogo involucrado)
+        is_patient = transaction.patient == request.user
+        is_psychologist = False
+        
+        if transaction.appointment:
+            is_psychologist = transaction.appointment.psychologist == request.user
+        elif hasattr(transaction, 'patient_plan') and transaction.patient_plan:
+            is_psychologist = transaction.patient_plan.plan.psychologist == request.user
+
+        if not (is_patient or is_psychologist):
+            return Response(
+                {'error': 'No tienes permiso para descargar esta factura.'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 3. Generar PDF
+        response = HttpResponse(content_type='application/pdf')
+        filename = f"recibo_{transaction.stripe_session_id[:8]}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        self._generate_pdf(response, transaction, request.tenant.name)
+        return response
+
+    def _generate_pdf(self, buffer, t, clinic_name):
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+
+        # Encabezado
+        p.setFont("Helvetica-Bold", 20)
+        p.drawString(50, height - 50, f"{clinic_name}")
+        
+        p.setFont("Helvetica", 12)
+        p.drawString(50, height - 70, "Comprobante de Pago")
+        
+        # Línea separadora
+        p.line(50, height - 80, width - 50, height - 80)
+
+        # Datos Generales
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, height - 110, "Detalles de la Transacción:")
+        
+        p.setFont("Helvetica", 10)
+        y = height - 130
+        gap = 15
+
+        p.drawString(50, y, f"ID Transacción: {t.stripe_session_id}")
+        y -= gap
+        p.drawString(50, y, f"Fecha: {t.paid_at.strftime('%d/%m/%Y %H:%M')}")
+        y -= gap
+        p.drawString(50, y, f"Paciente: {t.patient.get_full_name()}")
+        y -= gap
+        
+        # Detalles del Servicio
+        service_desc = "Servicio Desconocido"
+        professional_name = "N/A"
+        
+        if t.appointment:
+            service_desc = f"Cita Psicológica ({t.appointment.appointment_type})"
+            professional_name = t.appointment.psychologist.get_full_name()
+        elif hasattr(t, 'patient_plan') and t.patient_plan:
+            service_desc = f"Plan: {t.patient_plan.plan.title}"
+            professional_name = t.patient_plan.plan.psychologist.get_full_name()
+
+        p.drawString(50, y, f"Servicio: {service_desc}")
+        y -= gap
+        p.drawString(50, y, f"Profesional: {professional_name}")
+        
+        # Monto
+        y -= 30
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(50, y, f"TOTAL PAGADO: {t.amount} {t.currency}")
+
+        # Pie de página
+        p.setFont("Helvetica-Oblique", 8)
+        p.drawString(50, 50, "Este documento es un comprobante electrónico generado automáticamente.")
+        p.drawString(50, 40, f"Generado por Psico Admin - {clinic_name}")
+
+        p.showPage()
+        p.save()

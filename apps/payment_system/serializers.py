@@ -155,3 +155,49 @@ class PatientPlanSerializer(serializers.ModelSerializer):
             'is_active',
             'purchased_at'
         ]
+
+class PsychologistPaymentSerializer(serializers.ModelSerializer):
+    """
+    Serializer para que el psicólogo vea su historial de ingresos.
+    Muestra cuánto ganó él (neto) y quién le pagó.
+    """
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    service_type = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    your_earning = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaymentTransaction
+        fields = [
+            'id',
+            'paid_at',
+            'patient_name',
+            'amount',          # Monto total cobrado al paciente
+            'your_earning',    # Lo que recibe el psicólogo
+            'service_type',    # "Cita" o "Plan"
+            'description',     # Detalles
+            'status'
+        ]
+
+    def get_service_type(self, obj):
+        if obj.appointment:
+            return "Cita Individual"
+        elif hasattr(obj, 'patient_plan') and obj.patient_plan:
+            return "Plan de Cuidado"
+        return "Otro"
+
+    def get_description(self, obj):
+        if obj.appointment:
+            return f"Cita del {obj.appointment.appointment_date}"
+        elif hasattr(obj, 'patient_plan') and obj.patient_plan:
+            return f"Plan: {obj.patient_plan.plan.title}"
+        return "Pago de servicio"
+
+    def get_your_earning(self, obj):
+        # Obtenemos el % de la clínica desde el contexto o usamos un default (ej: 25%)
+        # Nota: Lo ideal es sacar esto del modelo Clinic, pero para visualizar rápido:
+        clinic_fee_percentage = 25 # Puedes ajustar esto o pasarlo por contexto
+        
+        # Ganancia del psicólogo = Total - Comisión Clínica
+        clinic_cut = (obj.amount * clinic_fee_percentage) / 100
+        return obj.amount - clinic_cut

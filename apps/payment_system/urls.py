@@ -14,7 +14,9 @@ from .views import (
     # Mobile endpoints
     create_payment_intent_appointment,
     create_payment_intent_plan,
-    confirm_payment_intent
+    confirm_payment_intent,
+    PsychologistPaymentHistoryView,
+    DownloadInvoiceView
 )
 
 urlpatterns = [
@@ -23,7 +25,13 @@ urlpatterns = [
     path('plans/purchase/', PurchasePlanView.as_view(), name='purchase-plan'),
     path('plans/my-plans/', MyPurchasedPlansView.as_view(), name='my-purchased-plans'),
     
+    # CU-27: Historial de Pagos (Paciente)
     path('my-payments/', PaymentHistoryListView.as_view(), name='my-payment-history'),
+    # CU-27: Historial de Ingresos (Psicólogo) - NUEVO
+    path('psychologist-earnings/', PsychologistPaymentHistoryView.as_view(), name='psychologist-payment-history'),
+
+    # CU-26: Descargar Factura (Para ambos) - NUEVO
+    path('transactions/<int:transaction_id>/invoice/', DownloadInvoiceView.as_view(), name='download-invoice'),
 
     path('confirm-payment/', ConfirmPaymentView.as_view(), name='confirm-payment'),
 

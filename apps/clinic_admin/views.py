@@ -27,6 +27,9 @@ from apps.professionals.models import VerificationDocument
 from apps.professionals.serializers import VerificationDocumentSerializer
 from datetime import date, timedelta
 
+from django.http import QueryDict
+from .ai_parser import parse_prompt_to_filters
+
 from apps.tenants.models import Clinic
 from .serializers import BackupConfigSerializer
 import logging
@@ -114,28 +117,58 @@ class PaymentReportView(viewsets.ReadOnlyModelViewSet):
         queryset = PaymentTransaction.objects.filter(status='completed')
 
         # --- Aplicamos los Filtros Dinámicos ---
-
-        # 1. Filtro por Psicólogo (psychologist_id)
-        psychologist_id = self.request.query_params.get('psychologist_id')
+        # A. Filtro por ID de Psicólogo (El que usa tu Dropdown)
+        # Aceptamos 'psychologist' o 'psychologist_id' por si acaso
+        psychologist_id = self.request.query_params.get('psychologist') or self.request.query_params.get('psychologist_id')
+        
         if psychologist_id:
-            queryset = queryset.filter(appointment__psychologist__id=psychologist_id)
+            # ¡IMPORTANTE! Buscamos en Citas O en Planes
+            queryset = queryset.filter(
+                Q(appointment__psychologist_id=psychologist_id) |
+                Q(patient_plan__plan__psychologist_id=psychologist_id)
+            )
 
-        # 2. Filtro por Especialidad (specialization_id)
-        spec_id = self.request.query_params.get('specialization_id')
-        if spec_id:
-            queryset = queryset.filter(appointment__psychologist__professional_profile__specializations__id=spec_id)
+# --- FILTRO INTELIGENTE DE PSICÓLOGO ---
+        psy_search = self.request.query_params.get('psychologist_search')
+        if psy_search:
+            # Dividimos "Ernesto Valverde" en ["Ernesto", "Valverde"]
+            terms = psy_search.split()
+            
+            # Lógica: Cada palabra debe estar en el nombre O en el apellido
+            # Y debe buscar tanto en Citas (appointment) como en Planes (patient_plan)
+            for term in terms:
+                queryset = queryset.filter(
+                    # Busca en Citas
+                    Q(appointment__psychologist__first_name__icontains=term) |
+                    Q(appointment__psychologist__last_name__icontains=term) |
+                    # O busca en Planes
+                    Q(patient_plan__plan__psychologist__first_name__icontains=term) |
+                    Q(patient_plan__plan__psychologist__last_name__icontains=term)
+                )
 
-        # 3. Filtro por Fecha (start_date, end_date)
-        start_date = self.request.query_params.get('start_date') # Formato: YYYY-MM-DD
+        # --- FILTRO INTELIGENTE DE PACIENTE ---
+        pat_search = self.request.query_params.get('patient_search')
+        if pat_search:
+            terms = pat_search.split()
+            for term in terms:
+                queryset = queryset.filter(
+                    Q(patient__first_name__icontains=term) |
+                    Q(patient__last_name__icontains=term)
+                )
+
+        # --- FILTROS DE FECHA ---
+        start_date = self.request.query_params.get('start_date')
         end_date = self.request.query_params.get('end_date')
 
         if start_date:
             queryset = queryset.filter(paid_at__gte=start_date)
         if end_date:
-            # (Añadimos 1 día para incluir el día final completo)
-            from datetime import timedelta
-            end_date_dt = date.fromisoformat(end_date) + timedelta(days=1)
-            queryset = queryset.filter(paid_at__lt=end_date_dt)
+            try:
+                # Sumamos 1 día para incluir el día final completo
+                end_date_dt = date.fromisoformat(end_date) + timedelta(days=1)
+                queryset = queryset.filter(paid_at__lt=end_date_dt)
+            except ValueError:
+                pass
 
         return queryset.order_by('-paid_at')
 
@@ -176,7 +209,7 @@ class PaymentReportView(viewsets.ReadOnlyModelViewSet):
         })
 
     # apps/clinic_admin/views.py
-# Dentro de: class PaymentReportView(viewsets.ReadOnlyModelViewSet):
+    # Dentro de: class PaymentReportView(viewsets.ReadOnlyModelViewSet):
 
     # ... (las funciones get_queryset, get_serializer_context, y list... no cambian) ...
 
@@ -329,6 +362,39 @@ class PaymentReportView(viewsets.ReadOnlyModelViewSet):
         response = HttpResponse(buffer, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="reporte_pagos_{date.today()}.pdf"'
         return response
+
+    @action(detail=False, methods=['post'])
+    def generate_smart_report(self, request):
+        """
+        POST /api/admin/reports/payments/generate_smart_report/
+        Body: { "prompt": "Dame los pagos de Ana Torres de la semana pasada en pdf" }
+        """
+        prompt = request.data.get('prompt')
+        if not prompt:
+            return Response({'error': 'Escribe qué reporte necesitas.'}, status=400)
+
+        # 1. Preguntar a la IA
+        logger.info(f"🧠 Analizando prompt: {prompt}")
+        ai_filters = parse_prompt_to_filters(prompt)
+        
+        if not ai_filters:
+            return Response({'error': 'No entendí la consulta. Intenta ser más específico.'}, status=400)
+
+        logger.info(f"✅ Filtros generados: {ai_filters}")
+
+        # 2. Inyectar los filtros en la Request
+        # (Hacemos esto para reutilizar la lógica de download_pdf/csv sin duplicar código)
+        new_params = request.GET.copy()
+        new_params.update(ai_filters)
+        request._request.GET = new_params 
+
+        # 3. Generar el archivo
+        report_type = ai_filters.get('report_type', 'pdf').lower()
+
+        if report_type == 'csv':
+            return self.download_csv(request)
+        else:
+            return self.download_pdf(request)
 
 class BackupConfigView(generics.RetrieveUpdateAPIView):
     """
