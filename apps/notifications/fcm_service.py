@@ -4,31 +4,47 @@ from firebase_admin import credentials, messaging
 from django.conf import settings
 import logging
 import os
+import json
 
 logger = logging.getLogger(__name__)
 
 # Inicializar Firebase Admin SDK
 def initialize_firebase():
     """
-    Inicializa Firebase Admin SDK con el archivo de credenciales.
+    Inicializa Firebase Admin SDK con credenciales desde variable de entorno o archivo.
     Solo se ejecuta una vez.
     """
     if not firebase_admin._apps:
         try:
-            # Ruta al archivo de credenciales de Firebase
+            # Intentar primero desde variable de entorno (para Render/producción)
+            firebase_creds_json = os.environ.get('FIREBASE_CREDENTIALS')
+            
+            if firebase_creds_json:
+                # Cargar credenciales desde JSON en variable de entorno
+                cred_dict = json.loads(firebase_creds_json)
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                logger.info("✅ Firebase Admin SDK inicializado desde variable de entorno")
+                return True
+            
+            # Si no hay variable de entorno, buscar archivo (para desarrollo local)
             cred_path = os.path.join(
                 settings.BASE_DIR,
                 'psicoadmin-94485-firebase-adminsdk-fbsvc-f398acf5a8.json'
             )
             
-            if not os.path.exists(cred_path):
-                logger.error(f"❌ Archivo de credenciales Firebase no encontrado: {cred_path}")
-                return False
+            if os.path.exists(cred_path):
+                cred = credentials.Certificate(cred_path)
+                firebase_admin.initialize_app(cred)
+                logger.info("✅ Firebase Admin SDK inicializado desde archivo")
+                return True
             
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-            logger.info("✅ Firebase Admin SDK inicializado correctamente")
-            return True
+            logger.error("❌ No se encontraron credenciales de Firebase (ni variable de entorno ni archivo)")
+            return False
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Error decodificando JSON de FIREBASE_CREDENTIALS: {str(e)}")
+            return False
             
         except Exception as e:
             logger.error(f"❌ Error inicializando Firebase: {str(e)}")
