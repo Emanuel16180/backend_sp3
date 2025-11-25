@@ -200,6 +200,7 @@ Content-Type: application/json
 ```dart
 // lib/services/payment_service.dart
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 
@@ -837,23 +838,28 @@ if (response.statusCode != 200) {
 
 1. **Payment Sheet vs Checkout Session**
    - Payment Sheet: Para apps mobile nativas ✅
-   - Checkout Session: Para web/PWA ❌
+   - Checkout Session: Para web/PWA ✅
+   - Son métodos diferentes, NO intercambiables
 
 2. **Confirmación Manual**
    - En mobile, debes llamar a `/mobile/confirm-payment/`
-   - El webhook NO es suficiente porque puede tardar
+   - El webhook NO es suficiente como único método de confirmación
+   - La app confirma inmediatamente después del pago exitoso
 
 3. **Idempotencia**
    - El backend valida si una cita ya fue pagada
    - Previene cargos duplicados
+   - Si vuelves a confirmar, retorna la cita existente
 
 4. **Testing**
    - Usa Stripe Test Mode durante desarrollo
    - Cambia a claves de producción al publicar
+   - NUNCA mezcles claves de test y producción
 
 5. **Webhooks**
    - Los webhooks siguen funcionando como respaldo
    - Útil si la app se cierra antes de confirmar
+   - Procesados de forma asíncrona por el backend
 
 ---
 

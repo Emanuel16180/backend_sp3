@@ -9,6 +9,10 @@ db.sqlite3
 AWS_ENV_VARIABLES.txt
 .ebextensions/
 .ebignore
+# Firebase credentials
+firebase-adminsdk-*.json
+psicoadmin-*-firebase-adminsdk-*.json
+google-services*.json
 
 # Archivos de migraciones compilados
 */migrations/__pycache__/

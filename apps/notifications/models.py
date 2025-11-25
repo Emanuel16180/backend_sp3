@@ -15,8 +15,12 @@ class PushSubscription(models.Model):
     
     # Datos de la suscripción (JSON de la API de Push)
     endpoint = models.URLField(max_length=500, unique=True)
-    p256dh = models.CharField(max_length=255)  # Clave pública del cliente
-    auth = models.CharField(max_length=255)     # Secret de autenticación
+    p256dh = models.CharField(max_length=255, blank=True, null=True)  # Clave pública del cliente (Web Push)
+    auth = models.CharField(max_length=255, blank=True, null=True)     # Secret de autenticación (Web Push)
+    
+    # FCM Token para notificaciones móviles (Firebase)
+    fcm_token = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    platform = models.CharField(max_length=20, choices=[('web', 'Web'), ('android', 'Android'), ('ios', 'iOS')], default='web')
     
     # Metadata
     user_agent = models.TextField(blank=True, null=True)
