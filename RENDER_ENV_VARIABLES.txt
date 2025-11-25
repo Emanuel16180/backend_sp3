@@ -41,7 +41,8 @@ Value: BNVdhBTDqH9WQRtYuLqy1VjA7QSEZPwlM0vgxmVn4K3a6to8unUoie_ZaqA8TzXAg49ExZ8PX
 
 Variable 2:
 -----------
-Key: VAPID_PRIVATE_KEY
+Key: VAPID_PRIVATE_KEYfrom django.conf import settings
+print(settings.VAPID_PUBLIC_KEY)
 Value: (usa OPCIÓN 1 o OPCIÓN 2 de arriba)
 
 Variable 3:
