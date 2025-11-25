@@ -42,6 +42,9 @@ services:
         sync: false
       - key: SUPABASE_BUCKET_NAME
         value: backups
+      # Firebase Admin SDK (para notificaciones móviles)
+      - key: FIREBASE_CREDENTIALS
+        sync: false
 
   # 2. Cron Job (Automatización de Backups)
   - type: cron
@@ -108,6 +111,9 @@ services:
         fromDatabase:
           name: psico-db
           property: connectionString
+      # Firebase Admin SDK (necesario para FCM)
+      - key: FIREBASE_CREDENTIALS
+        sync: false
 
 # PostgreSQL Database
 databases:
