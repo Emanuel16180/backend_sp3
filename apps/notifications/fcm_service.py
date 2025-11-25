@@ -137,7 +137,7 @@ def send_fcm_notification(fcm_token, title, body, data=None):
 
 def send_fcm_to_multiple(fcm_tokens, title, body, data=None):
     """
-    Envía notificación FCM a múltiples tokens (multicast).
+    Envía notificación FCM a múltiples tokens (usando send individual).
     
     Args:
         fcm_tokens (list): Lista de tokens FCM
@@ -162,57 +162,63 @@ def send_fcm_to_multiple(fcm_tokens, title, body, data=None):
             'responses': []
         }
     
-    try:
-        # Crear mensaje multicast
-        message = messaging.MulticastMessage(
-            notification=messaging.Notification(
-                title=title,
-                body=body,
-            ),
-            data=data or {},
-            tokens=fcm_tokens,
-            android=messaging.AndroidConfig(
-                priority='high',
-                notification=messaging.AndroidNotification(
-                    sound='default',
-                    channel_id='default',
+    # Enviar a cada token individualmente para evitar error 404 con /batch
+    success_count = 0
+    failure_count = 0
+    responses = []
+    
+    for token in fcm_tokens:
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=body,
                 ),
-            ),
-            apns=messaging.APNSConfig(
-                payload=messaging.APNSPayload(
-                    aps=messaging.Aps(
+                data=data or {},
+                token=token,
+                android=messaging.AndroidConfig(
+                    priority='high',
+                    notification=messaging.AndroidNotification(
                         sound='default',
-                        badge=1,
+                        channel_id='default',
                     ),
                 ),
-            ),
-        )
-        
-        # Enviar mensaje
-        response = messaging.send_multicast(message)
-        
-        logger.info(
-            f"✅ Notificaciones FCM enviadas: "
-            f"{response.success_count} exitosas, {response.failure_count} fallidas"
-        )
-        
-        return {
-            'success_count': response.success_count,
-            'failure_count': response.failure_count,
-            'responses': [
-                {
-                    'success': resp.success,
-                    'message_id': resp.message_id if resp.success else None,
-                    'error': str(resp.exception) if not resp.success else None
-                }
-                for resp in response.responses
-            ]
-        }
-        
-    except Exception as e:
-        logger.error(f"❌ Error enviando notificaciones FCM multicast: {str(e)}")
-        return {
-            'success_count': 0,
-            'failure_count': len(fcm_tokens),
-            'responses': []
-        }
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            sound='default',
+                            badge=1,
+                        ),
+                    ),
+                ),
+            )
+            
+            message_id = messaging.send(message)
+            
+            responses.append({
+                'success': True,
+                'message_id': message_id,
+                'error': None
+            })
+            success_count += 1
+            logger.info(f"✅ Notificación enviada: {message_id}")
+            
+        except Exception as token_error:
+            error_msg = str(token_error)
+            responses.append({
+                'success': False,
+                'message_id': None,
+                'error': error_msg
+            })
+            failure_count += 1
+            logger.error(f"❌ Error enviando a token {token[:20]}...: {error_msg}")
+    
+    logger.info(
+        f"✅ Notificaciones FCM: {success_count} exitosas, {failure_count} fallidas"
+    )
+    
+    return {
+        'success_count': success_count,
+        'failure_count': failure_count,
+        'responses': responses
+    }
