@@ -25,7 +25,7 @@ from django_tenants.utils import get_public_schema_name
 # Obtener el tenant público
 public_tenant = Clinic.objects.get(schema_name=get_public_schema_name())
 
-# Agregar dominio para api.psicoadmin.xyz al tenant público
+# Agregar dominios al tenant público
 Domain.objects.get_or_create(
     domain='api.psicoadmin.xyz',
     defaults={
@@ -34,6 +34,16 @@ Domain.objects.get_or_create(
     }
 )
 print('✅ Dominio api.psicoadmin.xyz agregado al tenant público')
+
+# Agregar dominio de Render
+Domain.objects.get_or_create(
+    domain='backend-sp3.onrender.com',
+    defaults={
+        'tenant': public_tenant,
+        'is_primary': True
+    }
+)
+print('✅ Dominio backend-sp3.onrender.com agregado al tenant público')
 
 # Crear Bienestar si no existe (SIN DOMINIO)
 bienestar, created = Clinic.objects.get_or_create(
