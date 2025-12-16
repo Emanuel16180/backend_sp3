@@ -1,0 +1,207 @@
+### ═══════════════════════════════════════════════════════════
+### 👤 FLUJO: GESTIÓN DE PERFIL DEL PACIENTE
+### Archivo: 10_paciente_perfil.http
+### Endpoints: /api/users/profile/, /api/users/patient-profile/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN PREVIO (para obtener token)
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER MI PERFIL BÁSICO
+### GET /api/users/profile/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/users/profile/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ ACTUALIZAR MI PERFIL BÁSICO
+### PATCH /api/users/profile/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/users/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "first_name": "Juan Carlos",
+  "last_name": "Pérez Gómez",
+  "phone": "70987654",
+  "address": "Av. 6 de Agosto #456, La Paz",
+  "gender": "M"
+}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ VER MI PERFIL DE PACIENTE (COMPLETO)
+### GET /api/users/patient-profile/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/users/patient-profile/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ COMPLETAR PERFIL DE PACIENTE
+### POST /api/users/patient-profile/
+### Primera vez que completas el perfil
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/users/patient-profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "emergency_contact_name": "María Pérez",
+  "emergency_contact_phone": "71234567",
+  "emergency_contact_relationship": "Hermana",
+  "occupation": "Ingeniero de Software",
+  "education_level": "universitario",
+  "initial_reason": "Ansiedad laboral y estrés",
+  "how_found_us": "Recomendación de un amigo"
+}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ ACTUALIZAR PERFIL DE PACIENTE
+### PATCH /api/users/patient-profile/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/users/patient-profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "emergency_contact_phone": "79876543",
+  "occupation": "Desarrollador Full Stack",
+  "initial_reason": "Manejo de ansiedad y estrés laboral. Mejora en relaciones interpersonales."
+}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ ACTUALIZAR PERFIL COMPLETO (UN SOLO REQUEST)
+### PUT /api/users/complete-profile/
+### Actualiza datos básicos y perfil de paciente a la vez
+### ───────────────────────────────────────────────────────────
+PUT {{baseUrl}}/api/users/complete-profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "user_data": {
+    "first_name": "Juan Carlos",
+    "last_name": "Pérez Gómez",
+    "phone": "70111222",
+    "address": "Calle Potosí #789, La Paz",
+    "date_of_birth": "1990-03-15"
+  },
+  "patient_data": {
+    "emergency_contact_name": "María Pérez López",
+    "emergency_contact_phone": "71333444",
+    "emergency_contact_relationship": "Hermana",
+    "occupation": "Ingeniero de Software Senior",
+    "education_level": "postgrado",
+    "initial_reason": "Búsqueda de equilibrio emocional y manejo del estrés",
+    "how_found_us": "Búsqueda en Google"
+  }
+}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ SUBIR FOTO DE PERFIL
+### PATCH /api/users/profile/
+### ⚠️ Requiere multipart/form-data
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/users/profile/
+Authorization: Token {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="profile_picture"; filename="perfil.jpg"
+Content-Type: image/jpeg
+
+< ./test_files/perfil.jpg
+------WebKitFormBoundary--
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Acceso sin autenticación
+GET {{baseUrl}}/api/users/profile/
+
+###
+
+### ERROR: Teléfono con formato inválido
+PATCH {{baseUrl}}/api/users/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "phone": "123"
+}
+
+###
+
+### ERROR: Fecha de nacimiento inválida (menor de 5 años)
+PATCH {{baseUrl}}/api/users/profile/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "date_of_birth": "2023-01-01"
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ VER PERFIL EXITOSO (200 OK):
+### {
+###   "id": 5,
+###   "email": "juan.perez@example.com",
+###   "username": "juan.perez",
+###   "first_name": "Juan",
+###   "last_name": "Perez",
+###   "ci": "1234567",
+###   "phone": "7012345",
+###   "gender": "M",
+###   "address": "Av. Arce #123",
+###   "date_of_birth": "1990-03-15",
+###   "age": 35,
+###   "user_type": "patient",
+###   "is_verified": false,
+###   "profile_picture": "/media/profile_pictures/perfil.jpg"
+### }
+###
+### ✅ VER PERFIL PACIENTE EXITOSO (200 OK):
+### {
+###   "user": {
+###     "id": 5,
+###     "email": "juan.perez@example.com",
+###     "first_name": "Juan",
+###     "last_name": "Perez"
+###   },
+###   "emergency_contact_name": "María Pérez",
+###   "emergency_contact_phone": "71234567",
+###   "emergency_contact_relationship": "Hermana",
+###   "occupation": "Ingeniero de Software",
+###   "education_level": "universitario",
+###   "initial_reason": "Ansiedad laboral",
+###   "how_found_us": "Recomendación",
+###   "profile_completed": true
+### }
+###
+### ❌ ERROR SIN AUTENTICACIÓN (401 Unauthorized):
+### {
+###   "detail": "Las credenciales de autenticación no se proveyeron."
+### }
+###
+### ═══════════════════════════════════════════════════════════

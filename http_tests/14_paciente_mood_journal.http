@@ -1,0 +1,228 @@
+### ═══════════════════════════════════════════════════════════
+### 😊 FLUJO: DIARIO DE ESTADO DE ÁNIMO
+### Archivo: 14_paciente_mood_journal.http
+### Endpoints: /api/clinical-history/mood-journal/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO PACIENTE
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ REGISTRAR ESTADO DE ÁNIMO DE HOY
+### POST /api/clinical-history/mood-journal/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/mood-journal/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "mood": "feliz",
+  "notes": "Tuve un buen día en el trabajo, me sentí productivo y relajado"
+}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ REGISTRAR ÁNIMO TRISTE
+### POST /api/clinical-history/mood-journal/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/mood-journal/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "mood": "triste",
+  "notes": "Me sentí abrumado con las responsabilidades"
+}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ REGISTRAR ÁNIMO ANSIOSO
+### POST /api/clinical-history/mood-journal/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/mood-journal/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "mood": "ansioso",
+  "notes": "Preocupación por proyecto importante. Dificultad para concentrarme."
+}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ REGISTRAR SIN NOTAS (OPCIONAL)
+### POST /api/clinical-history/mood-journal/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/clinical-history/mood-journal/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "mood": "neutral"
+}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ VER TODO MI DIARIO DE ÁNIMO
+### GET /api/clinical-history/mood-journal/
+### Ordenado por fecha (más reciente primero)
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/mood-journal/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ VER REGISTRO DE HOY
+### GET /api/clinical-history/mood-journal/today/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/mood-journal/today/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ ACTUALIZAR REGISTRO DE HOY
+### PUT /api/clinical-history/mood-journal/today/
+### ───────────────────────────────────────────────────────────
+PUT {{baseUrl}}/api/clinical-history/mood-journal/today/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "mood": "feliz",
+  "notes": "Actualizado: Me siento mejor después de la sesión de terapia"
+}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ FILTRAR POR RANGO DE FECHAS
+### GET /api/clinical-history/mood-journal/?start_date=2025-11-01&end_date=2025-11-30
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/mood-journal/?start_date=2025-11-01&end_date=2025-11-30
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ FILTRAR POR TIPO DE ÁNIMO
+### GET /api/clinical-history/mood-journal/?mood=feliz
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/mood-journal/?mood=feliz
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 VER ÚLTIMOS 7 DÍAS
+### GET /api/clinical-history/mood-journal/?days=7
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/clinical-history/mood-journal/?days=7
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Intentar registrar dos veces el mismo día
+POST {{baseUrl}}/api/clinical-history/mood-journal/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "mood": "feliz",
+  "notes": "Segundo registro del día"
+}
+
+###
+
+### ERROR: Mood inválido
+POST {{baseUrl}}/api/clinical-history/mood-journal/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "mood": "mood_invalido",
+  "notes": "Esto dará error"
+}
+
+###
+
+### ERROR: Sin autenticación
+GET {{baseUrl}}/api/clinical-history/mood-journal/
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ REGISTRO CREADO (201 Created):
+### {
+###   "id": 15,
+###   "patient": 5,
+###   "date": "2025-11-05",
+###   "mood": "feliz",
+###   "notes": "Tuve un buen día en el trabajo...",
+###   "created_at": "2025-11-05T14:30:00Z"
+### }
+###
+### ✅ LISTA DE REGISTROS (200 OK):
+### [
+###   {
+###     "id": 15,
+###     "date": "2025-11-05",
+###     "mood": "feliz",
+###     "mood_display": "Feliz",
+###     "notes": "Tuve un buen día...",
+###     "created_at": "2025-11-05T14:30:00Z"
+###   },
+###   {
+###     "id": 14,
+###     "date": "2025-11-04",
+###     "mood": "ansioso",
+###     "mood_display": "Ansioso/a",
+###     "notes": "Preocupación por...",
+###     "created_at": "2025-11-04T10:20:00Z"
+###   }
+### ]
+###
+### ✅ REGISTRO DE HOY (200 OK):
+### {
+###   "id": 15,
+###   "date": "2025-11-05",
+###   "mood": "feliz",
+###   "notes": "..."
+### }
+###
+### ❌ ERROR DUPLICADO (400 Bad Request):
+### {
+###   "error": "Ya existe un registro para hoy"
+### }
+###
+### ❌ ERROR MOOD INVÁLIDO (400 Bad Request):
+### {
+###   "mood": [
+###     "\"mood_invalido\" no es una opción válida."
+###   ]
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 OPCIONES DE MOOD VÁLIDAS:
+### - "feliz" - Feliz
+### - "triste" - Triste
+### - "ansioso" - Ansioso/a
+### - "enojado" - Enojado/a
+### - "neutral" - Neutral
+### - "cansado" - Cansado/a
+###
+### 💡 NOTAS IMPORTANTES:
+### 1. Solo se permite UN registro por día
+### 2. Puedes actualizar el registro de hoy con PUT
+### 3. El campo "notes" es opcional
+### 4. Los registros se ordenan por fecha descendente
+### 5. Los profesionales pueden ver estos registros para monitoreo
+###
+### ═══════════════════════════════════════════════════════════

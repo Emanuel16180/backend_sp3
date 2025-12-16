@@ -1,0 +1,73 @@
+# Entorno virtual
+venv/
+.env
+*.pyc
+__pycache__/
+db.sqlite3
+
+# Archivos con credenciales sensibles
+AWS_ENV_VARIABLES.txt
+.ebextensions/
+.ebignore
+# Firebase credentials
+firebase-adminsdk-*.json
+psicoadmin-*-firebase-adminsdk-*.json
+google-services*.json
+
+# Archivos de migraciones compilados
+*/migrations/__pycache__/
+*.log
+
+# Archivos de testing y debug (mantener proyecto limpio)
+test_*.py
+*debug*.py
+demo_*.py
+verify_*.py
+generate_*.py
+get_*.py
+diagnostico*.py
+analizar*.py
+setup_*.py
+final_*.py
+agregar_*.py
+eliminar_*.py
+crear_*.py
+show_*.py
+prueba_*.py
+check_*.py
+find_*.py
+tenant_debug.py
+configure_hosts.txt
+GUIA_*.py
+
+# Documentación (mantener README y guías de deploy)
+*.md
+!README.md
+!DEPLOY_RENDER.md
+!BACKUPS_S3_README.md
+
+# Archivos de VSCode / PyCharm
+.vscode/
+.idea/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos estáticos y media (se generan en producción)
+staticfiles/
+media/
+
+# Archivos de coverage/tests
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Archivos de compilación de Python
+*.egg-info/
+dist/
+build/
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

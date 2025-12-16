@@ -1,0 +1,92 @@
+================================================================
+VARIABLES DE ENTORNO PARA RENDER - COPIAR Y PEGAR
+================================================================
+
+⚠️ IMPORTANTE: Para VAPID_PRIVATE_KEY en Render, usa UNA de estas opciones:
+
+================================================================
+OPCIÓN 1: FORMATO MULTI-LÍNEA (RECOMENDADO)
+================================================================
+
+En el dashboard de Render, cuando añadas VAPID_PRIVATE_KEY, pega esto EXACTAMENTE:
+
+-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgJ9ZKB26RDV217Xip
+UofytQs9hzxHJHbUDEoPafphZz6hRANCAATVXYQUw6h/VkEbWLi6stVYwO0EhGT8
+JTNL4MZlZ+Ct2uraPLp1KInv2WqgPE81wIOPRMWfD16nHJut09LZqv49
+-----END PRIVATE KEY-----
+
+⚠️ NO añadas comillas "" alrededor
+⚠️ Render soporta valores multi-línea directamente
+
+================================================================
+OPCIÓN 2: FORMATO DE UNA LÍNEA CON \n
+================================================================
+
+Si Render no acepta multi-línea, usa esto (con comillas):
+
+"-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgJ9ZKB26RDV217Xip\nUofytQs9hzxHJHbUDEoPafphZz6hRANCAATVXYQUw6h/VkEbWLi6stVYwO0EhGT8\nJTNL4MZlZ+Ct2uraPLp1KInv2WqgPE81wIOPRMWfD16nHJut09LZqv49\n-----END PRIVATE KEY-----"
+
+⚠️ Incluye las comillas "" al inicio y final
+⚠️ Los \n son literales (no son saltos de línea reales)
+
+================================================================
+TODAS LAS VARIABLES VAPID PARA RENDER:
+================================================================
+
+Variable 1:
+-----------
+Key: VAPID_PUBLIC_KEY
+Value: BNVdhBTDqH9WQRtYuLqy1VjA7QSEZPwlM0vgxmVn4K3a6to8unUoie_ZaqA8TzXAg49ExZ8PXqccm63T0tmq_j0
+
+Variable 2:
+-----------
+Key: VAPID_PRIVATE_KEYfrom django.conf import settings
+print(settings.VAPID_PUBLIC_KEY)
+Value: (usa OPCIÓN 1 o OPCIÓN 2 de arriba)
+
+Variable 3:
+-----------
+Key: VAPID_CLAIM_EMAIL
+Value: admin@psicoadmin.xyz
+
+================================================================
+VERIFICAR DESPUÉS DE GUARDAR:
+================================================================
+
+1. Guarda las variables en Render
+2. Espera a que termine el redespliegue
+3. Abre el Shell de Render
+4. Ejecuta:
+
+python manage.py shell
+
+from django.conf import settings
+
+# Esto debe mostrar la clave pública:
+print(settings.VAPID_PUBLIC_KEY)
+
+# Esto debe mostrar "-----BEGIN PRIVATE KEY-----":
+print(settings.VAPID_PRIVATE_KEY[:30])
+
+# Esto debe mostrar el email:
+print(settings.VAPID_CLAIM_EMAIL)
+
+================================================================
+SI SIGUE SIN FUNCIONAR:
+================================================================
+
+El problema es que la variable NO existe en settings.py en el código
+que está desplegado en Render.
+
+SOLUCIÓN:
+1. Haz commit y push de los cambios:
+   git add config/settings.py
+   git commit -m "fix: añadir configuración VAPID a settings.py"
+   git push origin main
+
+2. Render redesplegará automáticamente con el código actualizado
+
+3. Luego añade las variables de entorno en el dashboard
+
+================================================================

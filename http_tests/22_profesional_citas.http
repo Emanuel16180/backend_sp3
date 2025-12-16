@@ -1,0 +1,282 @@
+### ═══════════════════════════════════════════════════════════
+### 📋 FLUJO: GESTIÓN DE CITAS DEL PROFESIONAL
+### Archivo: 22_profesional_citas.http
+### Endpoints: /api/appointments/appointments/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 🔐 LOGIN COMO PROFESIONAL
+### ───────────────────────────────────────────────────────────
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: application/json
+
+{
+  "email": "dra.martinez@bienestar.com",
+  "password": "demo123"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ VER TODAS MIS CITAS
+### GET /api/appointments/appointments/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ VER CITAS DE HOY
+### GET /api/appointments/appointments/?date=2025-11-05
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?appointment_date=2025-11-05
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ VER CITAS CONFIRMADAS (PAGADAS)
+### GET /api/appointments/appointments/?status=confirmed
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?status=confirmed
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 4️⃣ VER CITAS PENDIENTES DE PAGO
+### GET /api/appointments/appointments/?status=pending
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?status=pending
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 5️⃣ VER CITAS DE LA SEMANA
+### GET /api/appointments/appointments/?date_from=2025-11-03&date_to=2025-11-09
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?date_from=2025-11-03&date_to=2025-11-09
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 6️⃣ VER DETALLE DE UNA CITA
+### GET /api/appointments/appointments/{id}/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/1/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 7️⃣ CONFIRMAR CITA (después del pago)
+### PATCH /api/appointments/appointments/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/appointments/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "confirmed"
+}
+
+### ───────────────────────────────────────────────────────────
+### 8️⃣ MARCAR CITA COMO COMPLETADA
+### PATCH /api/appointments/appointments/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/appointments/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "completed"
+}
+
+### ───────────────────────────────────────────────────────────
+### 9️⃣ MARCAR COMO "NO ASISTIÓ"
+### PATCH /api/appointments/appointments/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/appointments/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "no_show",
+  "notes": "El paciente no se presentó a la cita y no avisó"
+}
+
+### ───────────────────────────────────────────────────────────
+### 🔟 AÑADIR LINK DE VIDEOLLAMADA (PARA CITAS ONLINE)
+### PATCH /api/appointments/appointments/{id}/
+### ───────────────────────────────────────────────────────────
+PATCH {{baseUrl}}/api/appointments/appointments/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "meeting_link": "https://meet.google.com/abc-defg-hij"
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣1️⃣ CANCELAR CITA (COMO PROFESIONAL)
+### POST /api/appointments/appointments/{id}/cancel/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/appointments/appointments/1/cancel/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "reason": "Emergencia personal, necesito reprogramar"
+}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣2️⃣ VER HISTORIAL CON UN PACIENTE ESPECÍFICO
+### GET /api/appointments/appointments/?patient_id=5
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?patient_id=5
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣3️⃣ VER CITAS COMPLETADAS (HISTORIAL)
+### GET /api/appointments/appointments/?status=completed
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?status=completed
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣4️⃣ ORDENAR POR FECHA ASCENDENTE (PRÓXIMAS PRIMERO)
+### GET /api/appointments/appointments/?ordering=appointment_date,start_time
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/?ordering=appointment_date,start_time&status=confirmed
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣5️⃣ VER ESTADÍSTICAS DE MIS CITAS
+### GET /api/appointments/appointments/stats/
+### ───────────────────────────────────────────────────────────
+GET {{baseUrl}}/api/appointments/appointments/stats/
+Authorization: Token {{authToken}}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Intentar ver cita de otro profesional
+GET {{baseUrl}}/api/appointments/appointments/999/
+Authorization: Token {{authToken}}
+
+###
+
+### ERROR: Cambiar estado inválido
+PATCH {{baseUrl}}/api/appointments/appointments/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "estado_invalido"
+}
+
+###
+
+### ERROR: Completar cita sin haberla realizado
+PATCH {{baseUrl}}/api/appointments/appointments/1/
+Authorization: Token {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "completed"
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ LISTA DE CITAS (200 OK):
+### {
+###   "count": 15,
+###   "next": null,
+###   "previous": null,
+###   "results": [
+###     {
+###       "id": 1,
+###       "patient": {
+###         "id": 5,
+###         "first_name": "Juan",
+###         "last_name": "Perez",
+###         "email": "juan.perez@example.com",
+###         "phone": "7012345"
+###       },
+###       "psychologist": {
+###         "id": 2,
+###         "first_name": "Laura",
+###         "last_name": "Martinez"
+###       },
+###       "appointment_date": "2025-11-05",
+###       "start_time": "10:00:00",
+###       "end_time": "11:00:00",
+###       "appointment_type": "online",
+###       "appointment_type_display": "En línea",
+###       "status": "confirmed",
+###       "status_display": "Confirmada",
+###       "reason_for_visit": "Primera consulta",
+###       "notes": "",
+###       "consultation_fee": "250.00",
+###       "is_paid": true,
+###       "meeting_link": "https://meet.google.com/...",
+###       "created_at": "2025-11-01T10:00:00Z"
+###     }
+###   ]
+### }
+###
+### ✅ CITA ACTUALIZADA (200 OK):
+### {
+###   "id": 1,
+###   "status": "completed",
+###   "notes": "Sesión completada exitosamente",
+###   ...
+### }
+###
+### ✅ ESTADÍSTICAS (200 OK):
+### {
+###   "total_appointments": 45,
+###   "appointments_today": 3,
+###   "appointments_this_week": 12,
+###   "appointments_this_month": 35,
+###   "pending_appointments": 5,
+###   "confirmed_appointments": 8,
+###   "completed_appointments": 30,
+###   "cancelled_appointments": 2,
+###   "no_show_appointments": 0,
+###   "total_earnings_month": "8750.00",
+###   "average_rating": "4.80"
+### }
+###
+### ❌ ERROR NO ENCONTRADA (404 Not Found):
+### {
+###   "detail": "No encontrado."
+### }
+###
+### ❌ ERROR ESTADO INVÁLIDO (400 Bad Request):
+### {
+###   "status": [
+###     "\"estado_invalido\" no es una opción válida."
+###   ]
+### }
+###
+### ═══════════════════════════════════════════════════════════
+###
+### 💡 ESTADOS DE CITAS:
+### - "pending" - Pendiente (aún no pagada)
+### - "confirmed" - Confirmada (pagada)
+### - "completed" - Completada
+### - "cancelled" - Cancelada
+### - "no_show" - No asistió
+###
+### 💡 TIPOS DE CITA:
+### - "online" - En línea (requiere meeting_link)
+### - "in_person" - Presencial
+###
+### 💡 FLUJO NORMAL:
+### 1. Paciente crea cita → status="pending"
+### 2. Paciente paga → status="confirmed", is_paid=true
+### 3. Profesional realiza sesión → status="completed"
+### 4. (Opcional) Profesional califica asistencia → "no_show" si no asistió
+###
+### ═══════════════════════════════════════════════════════════

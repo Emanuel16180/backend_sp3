@@ -1,0 +1,156 @@
+### ═══════════════════════════════════════════════════════════
+### 📝 FLUJO: REGISTRO DE NUEVOS USUARIOS
+### Archivo: 01_auth_registro.http
+### Endpoints: /api/auth/register/
+### ═══════════════════════════════════════════════════════════
+
+@baseUrl = http://bienestar.localhost:8000
+@baseMindcare = http://mindcare.localhost:8000
+
+### ───────────────────────────────────────────────────────────
+### 1️⃣ REGISTRO DE PACIENTE - COMPLETO
+### POST /api/auth/register/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "nuevo.paciente@example.com",
+  "username": "nuevo_paciente",
+  "password": "Password123!",
+  "password_confirm": "Password123!",
+  "first_name": "Carlos",
+  "last_name": "Mendoza",
+  "ci": "7654321",
+  "phone": "70123456",
+  "gender": "M",
+  "address": "Av. Arce #123, La Paz",
+  "date_of_birth": "1990-05-15"
+}
+
+### ───────────────────────────────────────────────────────────
+### 2️⃣ REGISTRO DE PACIENTE - MÍNIMO (solo campos requeridos)
+### POST /api/auth/register/
+### ───────────────────────────────────────────────────────────
+POST {{baseUrl}}/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "paciente.simple@example.com",
+  "username": "paciente_simple",
+  "password": "Password123!",
+  "password_confirm": "Password123!",
+  "first_name": "Ana",
+  "last_name": "Silva"
+}
+
+### ───────────────────────────────────────────────────────────
+### 3️⃣ REGISTRO EN CLÍNICA MINDCARE
+### POST /api/auth/register/
+### ───────────────────────────────────────────────────────────
+POST {{baseMindcare}}/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "nuevo.mindcare@example.com",
+  "username": "nuevo_mindcare",
+  "password": "Password123!",
+  "password_confirm": "Password123!",
+  "first_name": "Roberto",
+  "last_name": "Vega",
+  "ci": "8765432",
+  "phone": "71234567",
+  "gender": "M",
+  "date_of_birth": "1985-08-20"
+}
+
+### ───────────────────────────────────────────────────────────
+### ❌ CASOS DE ERROR COMUNES
+### ───────────────────────────────────────────────────────────
+
+### ERROR: Contraseñas no coinciden
+POST {{baseUrl}}/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "error1@example.com",
+  "username": "error1",
+  "password": "Password123!",
+  "password_confirm": "Password456!",
+  "first_name": "Error",
+  "last_name": "Test"
+}
+
+###
+
+### ERROR: Email ya existe
+POST {{baseUrl}}/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "juan.perez@example.com",
+  "username": "nuevo_usuario",
+  "password": "Password123!",
+  "password_confirm": "Password123!",
+  "first_name": "Juan",
+  "last_name": "Duplicado"
+}
+
+###
+
+### ERROR: CI ya existe
+POST {{baseUrl}}/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "nuevo@example.com",
+  "username": "nuevo_user",
+  "ci": "1234567",
+  "password": "Password123!",
+  "password_confirm": "Password123!",
+  "first_name": "CI",
+  "last_name": "Duplicado"
+}
+
+###
+
+### ERROR: Edad menor a 5 años
+POST {{baseUrl}}/api/auth/register/
+Content-Type: application/json
+
+{
+  "email": "bebe@example.com",
+  "username": "bebe",
+  "password": "Password123!",
+  "password_confirm": "Password123!",
+  "first_name": "Bebé",
+  "last_name": "Test",
+  "date_of_birth": "2023-01-01"
+}
+
+###
+
+### ═══════════════════════════════════════════════════════════
+### 📊 RESPUESTAS ESPERADAS
+### ═══════════════════════════════════════════════════════════
+###
+### ✅ ÉXITO (201 Created):
+### {
+###   "message": "Usuario registrado exitosamente",
+###   "user": {
+###     "id": 10,
+###     "email": "nuevo.paciente@example.com",
+###     "first_name": "Carlos",
+###     "last_name": "Mendoza",
+###     "user_type": "patient"
+###   },
+###   "token": "a1b2c3d4e5f6..."
+### }
+###
+### ❌ ERROR (400 Bad Request):
+### {
+###   "email": ["Este email ya está registrado"],
+###   "ci": ["Esta cédula ya está registrada"]
+### }
+###
+### ═══════════════════════════════════════════════════════════
