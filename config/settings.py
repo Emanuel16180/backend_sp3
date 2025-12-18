@@ -37,7 +37,7 @@ if RENDER:
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 else:
-    ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,public.localhost,bienestar.localhost,mindcare.localhost,*.localhost,*.127.0.0.1.nip.io", cast=Csv())
+    ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,public.localhost,bienestar.localhost,mindcare.localhost,*.localhost,*.127.0.0.1.nip.io,backend-sp3-5xin.onrender.com,.onrender.com", cast=Csv())
 
 # Application definition
 
